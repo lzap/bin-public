@@ -100,6 +100,9 @@ service smartd stop && chkconfig --del smartd
 if [ ! grep "bin-public" /root/.bashrc 2>/dev/null; ]; then
   echo -e "\n\n# by bin-public bootstrap" >> /root/.bashrc
   echo 'alias halt="poweroff"' >> /root/.bashrc
+  echo 'alias v="vim"' >> /root/.bashrc
+  echo 'alias vi="vim"' >> /root/.bashrc
+  echo 'alias g="git"' >> /root/.bashrc
   echo 'alias yi="sudo yum install"' >> /root/.bashrc
   echo 'alias yyi="sudo yum -y install"' >> /root/.bashrc
   echo 'alias yyyi="sudo yum -Cy install"' >> /root/.bashrc
