@@ -97,7 +97,7 @@ service acpid start
 service smartd stop && chkconfig --del smartd
 
 # aliases
-if [ grep -v "bin-public" /root/.bashrc 2>/dev/null ]; then
+if grep -v "bin-public" /root/.bashrc 2>/dev/null; then
   echo -e "\n\n# by bin-public bootstrap" >> /root/.bashrc
   echo 'alias halt="poweroff"' >> /root/.bashrc
   echo 'alias yi="sudo yum install"' >> /root/.bashrc
