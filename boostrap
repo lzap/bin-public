@@ -104,7 +104,7 @@ echo 'alias ypr="sudo yum provides"' >> /root/.bashrc
 echo 'alias yprw="sudo yum provides \$(which \$1)"' >> /root/.bashrc
 
 # install public scripts
-git clone git@github.com:lzap/bin-public.git bin
+git clone git://github.com/lzap/bin-public.git bin
 
 # install ssh keys
 mkdir /root/.ssh 2>/dev/null
