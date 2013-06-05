@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ `id -u` != 0 ]; then
+  echo 'You must be root to run this script'
+  exit 1
+fi
+
 FEDORA_VERSION=$(rpm -q --queryformat '%{VERSION}' fedora-release)
 echo Fedora version: $FEDORA_VERSION
 REDHAT_VERSION=$(rpm -q --queryformat '%{VERSION}' redhat-release-server)
@@ -75,7 +80,7 @@ elif [ ! -z "$FEDORA_VERSION" ]; then
 fi
 
 # disable presto download
-sed -iE 's/^enabled=1/enabled=0/g' /etc/yum/pluginconf.d/presto.conf
+[ -f /etc/yum/pluginconf.d/presto.conf ] && sed -iE 's/^enabled=1/enabled=0/g' /etc/yum/pluginconf.d/presto.conf
 
 # make grub faster
 sed -iE 's/^timeout/timeout=0/g' /etc/grub.conf
@@ -92,16 +97,19 @@ service acpid start
 service smartd stop && chkconfig --del smartd
 
 # aliases
-echo 'alias halt="poweroff"' >> /root/.bashrc
-echo 'alias yi="sudo yum install"' >> /root/.bashrc
-echo 'alias yyi="sudo yum -y install"' >> /root/.bashrc
-echo 'alias yyyi="sudo yum -Cy install"' >> /root/.bashrc
-echo 'alias yu="sudo yum update"' >> /root/.bashrc
-echo 'alias yyu="sudo yum -y update"' >> /root/.bashrc
-echo 'alias yr="sudo yum remove"' >> /root/.bashrc
-echo 'alias yyr="sudo yum -y remove"' >> /root/.bashrc
-echo 'alias ypr="sudo yum provides"' >> /root/.bashrc
-echo 'alias yprw="sudo yum provides \$(which \$1)"' >> /root/.bashrc
+if [ ! grep "bin-public" /root/.bashrc ]; then
+  echo -e "\n\n# by bin-public bootstrap" >> /root/.bashrc
+  echo 'alias halt="poweroff"' >> /root/.bashrc
+  echo 'alias yi="sudo yum install"' >> /root/.bashrc
+  echo 'alias yyi="sudo yum -y install"' >> /root/.bashrc
+  echo 'alias yyyi="sudo yum -Cy install"' >> /root/.bashrc
+  echo 'alias yu="sudo yum update"' >> /root/.bashrc
+  echo 'alias yyu="sudo yum -y update"' >> /root/.bashrc
+  echo 'alias yr="sudo yum remove"' >> /root/.bashrc
+  echo 'alias yyr="sudo yum -y remove"' >> /root/.bashrc
+  echo 'alias ypr="sudo yum provides"' >> /root/.bashrc
+  echo 'alias yprw="sudo yum provides \$(which \$1)"' >> /root/.bashrc
+fi
 
 # install public scripts
 git clone git://github.com/lzap/bin-public.git bin

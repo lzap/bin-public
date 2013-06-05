@@ -23,4 +23,4 @@ wget --no-check-certificate -O - $1 \
     | xargs -n 3 wget --no-check-certificate
 
 find $DIR
-echo "yum -y install $DIR/*"
+echo "yum -y install $DIR/* && rm -f $DIR/*"
