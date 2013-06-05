@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# Send a scratchbuild from current directory.
+#
+# Usage: sbu [katello|fedora] [koji-tag] [dist-tag]
+#
+
+export LC_ALL=C
+KOJI_TYPE=${1:-katello}
+KOJI_TAG=${2:-foreman-nightly-rhel6}
+DIST=${3:-el6}
+
+SPEC=$(ls *spec | head -n1)
+NAME=$(rpmspec -q --rpms --qf '%{NAME}\n' "$SPEC" | head -n1)
+VERSION=$(rpmspec -q --rpms --qf '%{VERSION}\n' "$SPEC" | head -n1)
+NAMEVERSION="$NAME-$VERSION"
+
+echo "Working on $SPEC ($NAMEVERSION)"
+
+# build SRPM
+TEMPDIR=$(mktemp -d)
+trap "rm -rf $TEMPDIR" EXIT
+mkdir $TEMPDIR/$NAMEVERSION
+cp -Rad . $TEMPDIR/$NAMEVERSION
+pushd $TEMPDIR >/dev/null
+rm -rf `find -name ".git*"`
+tar c $NAMEVERSION | gzip -8 > ~/rpmbuild/SOURCES/$NAMEVERSION.tar.gz
+cd $NAMEVERSION
+SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+popd >/dev/null
+
+# submit to koji
+if [ "$KOJI_TYPE" == "katello" ]; then
+  KOJI_CMD="koji -c ~/.koji/katello-config"
+else
+  KOJI_CMD="koji"
+fi
+$KOJI_CMD build --scratch --nowait $KOJI_TAG "$SRPM"
