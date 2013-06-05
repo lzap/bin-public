@@ -11,6 +11,7 @@ fi
 
 DIR=$(mktemp -du -t koji-XXXX)
 mkdir $DIR
+pushd $DIR >/dev/null
 
 wget --no-check-certificate -O - $1 \
     | awk -F\" 'function basename(f) {
@@ -21,6 +22,8 @@ wget --no-check-certificate -O - $1 \
                 /"getfile?.*\.rpm"/ && ! /src\.rpm/ {
                         print "'"$KOJI"'" $2 " -O " basename($2)} ' \
     | xargs -n 3 wget --no-check-certificate
+
+popd >/dev/null
 
 find $DIR
 echo "yum -y install $DIR/* && rm -f $DIR/*"
