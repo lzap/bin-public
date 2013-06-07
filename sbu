@@ -35,7 +35,7 @@ if [ "$TARGET" == "katello" ]; then
   koji -c ~/.koji/katello-config build --scratch --nowait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora" ]; then
   # fedora koji
-  koji --scratch --nowait $KOJI_TAG "$SRPM"
+  koji build --scratch --nowait $KOJI_TAG "$SRPM"
 else
   # local build on a hostname
   echo "Copying $SRPM to $TARGET"
