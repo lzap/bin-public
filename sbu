@@ -2,11 +2,11 @@
 #
 # Send a scratchbuild from current directory.
 #
-# Usage: sbu [katello|fedora] [koji-tag] [dist-tag]
+# Usage: sbu [katello|fedora|hostname] [koji-tag] [dist-tag]
 #
 
 export LC_ALL=C
-KOJI_TYPE=${1:-katello}
+TARGET=${1:-katello}
 KOJI_TAG=${2:-foreman-nightly-rhel6}
 DIST=${3:-el6}
 
@@ -29,10 +29,44 @@ cd $NAMEVERSION
 SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 popd >/dev/null
 
-# submit to koji
-if [ "$KOJI_TYPE" == "katello" ]; then
-  KOJI_CMD="koji -c ~/.koji/katello-config"
+# submit the build
+if [ "$TARGET" == "katello" ]; then
+  # katello koji
+  koji -c ~/.koji/katello-config build --scratch --nowait $KOJI_TAG "$SRPM"
+elif [ "$TARGET" == "fedora" ]; then
+  # fedora koji
+  koji --scratch --nowait $KOJI_TAG "$SRPM"
 else
-  KOJI_CMD="koji"
+  # local build on a hostname
+  echo "Copying $SRPM to $TARGET"
+  scp "$SRPM" "$TARGET:"
+  SRPM_FILE=$(basename $SRPM)
+  ssh -C "$TARGET" <<EOF
+  RPMBUILD=~/rpmbuild
+  echo Building $SRPM_FILE in \$RPMBUILD
+  if [ -f "$SRPM_FILE" ]; then
+    # install build essentials
+    type -P gcc >/dev/null || yum groupinstall "Development Tools"
+
+    # prepare and clean whole rpmbuild dir
+    [ -d /usr/src/redhat/RPMS ] && RPMBUILD=/usr/src/redhat
+    [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/yum-builddep ] && yum -y install rpm-build yum-utils
+    rm -rf \$RPMBUILD/*/*
+    
+    # install build deps and build (NOT using mock)
+    echo "y" | yum-builddep "$SRPM_FILE"
+    rpmbuild --rmsource --rmspec --rebuild "$SRPM_FILE" $2 $3 $4
+    
+    # remove headpin (we are testing only against katello)
+    rm -f \$RPMBUILD/*/*/*headpin*rpm
+   
+    # install packages and if that fails try to --force it
+    echo INSTALLING:
+    ls \$RPMBUILD/*/*/*rpm
+    # TODO - yum returns 0 on 'does not update installed package' error
+    yum localinstall -y --nogpgcheck \$RPMBUILD/*/*/*rpm
+    rpm -Uvh --oldpackage --force \$RPMBUILD/*/*/*rpm 2>&1
+    echo DONE
+  fi
+EOF
 fi
-$KOJI_CMD build --scratch --nowait $KOJI_TAG "$SRPM"
