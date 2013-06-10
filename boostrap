@@ -117,6 +117,9 @@ fi
 # install public scripts
 git clone git://github.com/lzap/bin-public.git bin
 
+# copy termina infos
+ln -sf /root/.terminfo bin/files/terminfo
+
 # install ssh keys
 mkdir /root/.ssh 2>/dev/null
 cat /root/bin/files/lzap_id_{rsa,dsa}.pub >> /root/.ssh/authorized_keys
