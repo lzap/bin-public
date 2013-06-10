@@ -15,6 +15,8 @@ RELEASE_MAYOR=$(rpm -q --queryformat '%{RELEASE}' redhat-release-server | awk -F
 RELEASE_MINOR=$(rpm -q --queryformat '%{RELEASE}' redhat-release-server | awk -F. '{print $2}')
 RELEASE="$RELEASE_MAYOR.$RELEASE_MINOR"
 
+set -x
+
 if [ ! -z "$REDHAT_VERSION" ]; then
   # setup fast yum repos
   cat > /etc/yum.repos.d/rhel-brq.repo <<EOS
@@ -118,7 +120,7 @@ fi
 git clone git://github.com/lzap/bin-public.git bin
 
 # copy termina infos
-ln -sf /root/.terminfo bin/files/terminfo
+ln -sf /root/bin/files/terminfo /root/.terminfo
 
 # install ssh keys
 mkdir /root/.ssh 2>/dev/null
