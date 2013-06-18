@@ -90,7 +90,7 @@ fi
 sed -iE 's/^timeout/timeout=0/g' /etc/grub.conf
 
 # must-have packages
-yum -y install openssh-clients acpid ntp vim screen wget curl telnet rsync mc git
+yum -y install mlocate openssh-clients acpid ntp vim screen wget curl telnet rsync mc git
 
 # basic services
 chkconfig acpid on
@@ -107,15 +107,17 @@ if [ ! grep "bin-public" /root/.bashrc 2>/dev/null; ]; then
   echo 'alias v="vim"' >> /root/.bashrc
   echo 'alias vi="vim"' >> /root/.bashrc
   echo 'alias g="git"' >> /root/.bashrc
-  echo 'alias yi="sudo yum install"' >> /root/.bashrc
-  echo 'alias yyi="sudo yum -y install"' >> /root/.bashrc
-  echo 'alias yyyi="sudo yum -Cy install"' >> /root/.bashrc
-  echo 'alias yu="sudo yum update"' >> /root/.bashrc
-  echo 'alias yyu="sudo yum -y update"' >> /root/.bashrc
-  echo 'alias yr="sudo yum remove"' >> /root/.bashrc
-  echo 'alias yyr="sudo yum -y remove"' >> /root/.bashrc
-  echo 'alias ypr="sudo yum provides"' >> /root/.bashrc
-  echo 'alias yprw="sudo yum provides \$(which \$1)"' >> /root/.bashrc
+  echo 'alias yi="yum install"' >> /root/.bashrc
+  echo 'alias yyi="yum -y install"' >> /root/.bashrc
+  echo 'alias yyyi="yum -Cy install"' >> /root/.bashrc
+  echo 'alias yu="yum update"' >> /root/.bashrc
+  echo 'alias yyu="yum -y update"' >> /root/.bashrc
+  echo 'alias yr="yum remove"' >> /root/.bashrc
+  echo 'alias yyr="yum -y remove"' >> /root/.bashrc
+  echo 'alias ypr="yum provides"' >> /root/.bashrc
+  echo 'alias ys="yum search"' >> /root/.bashrc
+  echo 'alias yprw="yum provides \$(which \$1)"' >> /root/.bashrc
+  echo 'alias ff="cd /usr/share/foreman"' >> /root/.bashrc
 fi
 
 # install public scripts
