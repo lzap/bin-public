@@ -5,6 +5,8 @@ if [ `id -u` != 0 ]; then
   exit 1
 fi
 
+pushd /root >/dev/null
+
 FEDORA_VERSION=$(rpm -q --queryformat '%{VERSION}' fedora-release)
 echo Fedora version: $FEDORA_VERSION
 REDHAT_VERSION=$(rpm -q --queryformat '%{VERSION}' redhat-release-server)
@@ -117,7 +119,13 @@ if [ ! grep "bin-public" /root/.bashrc 2>/dev/null; ]; then
 fi
 
 # install public scripts
-git clone git://github.com/lzap/bin-public.git bin
+if [ -d bin ]; then
+  pushd bin >/dev/null
+  git pull
+  popd >/dev/null
+else
+  git clone git://github.com/lzap/bin-public.git bin
+fi
 
 # copy termina infos
 ln -sf /root/bin/files/terminfo /root/.terminfo
@@ -130,3 +138,5 @@ chown -R root:root /root/.ssh; restorecon -Rv /root/.ssh
 
 # cleanup
 yum clean all
+
+popd >/dev/null
