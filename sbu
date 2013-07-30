@@ -8,11 +8,12 @@
 export LC_ALL=C
 TARGET=${1:-katello}
 KOJI_TAG=${2:-foreman-nightly-rhel6}
-DIST=${3:-el6}
+DIST=${3:-.el6}
+[ ${DIST##.} = $DIST ] && DIST=.${DIST}
 
 SPEC=$(ls *.spec | head -n1)
-NAME=$(rpmspec -q --rpms --qf '%{NAME}\n' "$SPEC" | head -n1)
-VERSION=$(rpmspec -q --rpms --qf '%{VERSION}\n' "$SPEC" | head -n1)
+NAME=$(rpm -q --qf '%{NAME}\n' --specfile "$SPEC" | head -n1)
+VERSION=$(rpm -q --qf '%{VERSION}\n' --specfile "$SPEC" | head -n1)
 NAMEVERSION="$NAME-$VERSION"
 
 echo "Working on $SPEC ($NAMEVERSION)"
