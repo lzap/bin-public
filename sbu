@@ -10,8 +10,10 @@ TARGET=${1:-katello}
 KOJI_TAG=${2:-foreman-nightly-rhel6}
 DIST=${3:-.el6}
 [ ${DIST##.} = $DIST ] && DIST=.${DIST}
+SRCDIR="$HOME/rpmbuild/SOURCES"
 
 SPEC=$(ls *.spec | head -n1)
+SPECDIR=$(pwd)
 NAME=$(rpm -q --qf '%{NAME}\n' --specfile "$SPEC" | head -n1)
 VERSION=$(rpm -q --qf '%{VERSION}\n' --specfile "$SPEC" | head -n1)
 NAMEVERSION="$NAME-$VERSION"
@@ -19,16 +21,26 @@ NAMEVERSION="$NAME-$VERSION"
 echo "Working on $SPEC ($NAMEVERSION)"
 
 # build SRPM
-TEMPDIR=$(mktemp -d)
-trap "rm -rf $TEMPDIR" EXIT
-mkdir $TEMPDIR/$NAMEVERSION
-cp -Rad . $TEMPDIR/$NAMEVERSION
-pushd $TEMPDIR >/dev/null
-rm -rf `find -name ".git*"`
-tar c $NAMEVERSION | gzip -8 > ~/rpmbuild/SOURCES/$NAMEVERSION.tar.gz
-cd $NAMEVERSION
-SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
-popd >/dev/null
+if spectool --list-files rubygem-foreman_discovery.spec | awk '{print $2}' | grep '^http'; then
+  # sources are remote - download them first
+  pushd $SRCDIR >/dev/null
+  echo "Downloading sources..."
+  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -nc -c -q
+  popd >/dev/null
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+else
+  # sources are most likely part of the git repo
+  TEMPDIR=$(mktemp -d)
+  trap "rm -rf $TEMPDIR" EXIT
+  mkdir $TEMPDIR/$NAMEVERSION
+  cp -Rad . $TEMPDIR/$NAMEVERSION
+  pushd $TEMPDIR >/dev/null
+  rm -rf `find -name ".git*"`
+  tar c $NAMEVERSION | gzip -8 > ~/rpmbuild/SOURCES/$NAMEVERSION.tar.gz
+  cd $NAMEVERSION
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+  popd >/dev/null
+fi
 
 # submit the build
 if [ "$TARGET" == "katello" ]; then
@@ -61,7 +73,11 @@ else
     rpmbuild --rmsource --rmspec --rebuild "$SRPM_FILE" $2 $3 $4
     
     # remove headpin (we are testing only against katello)
-    rm -f \$RPMBUILD/*/*/*headpin*rpm
+    #rm -f \$RPMBUILD/*/*/*headpin*rpm
+
+    # if fedora-review is enabled, do it now
+    type -P fedora-review >/dev/null || yum -y install fedora-review
+    fedora-review -n "$NAME" -r -p
    
     # install packages and if that fails try to --force it
     echo INSTALLING:
