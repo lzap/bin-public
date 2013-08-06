@@ -21,7 +21,7 @@ NAMEVERSION="$NAME-$VERSION"
 echo "Working on $SPEC ($NAMEVERSION)"
 
 # build SRPM
-if spectool --list-files rubygem-foreman_discovery.spec | awk '{print $2}' | grep '^http'; then
+if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null
   echo "Downloading sources..."
