@@ -35,6 +35,9 @@ else
   mkdir $TEMPDIR/$NAMEVERSION
   cp -Rad . $TEMPDIR/$NAMEVERSION
   pushd $TEMPDIR >/dev/null
+  for g in $(find . -name .gitignore); do
+    (cd $(dirname $g) && rm -rf $(egrep -v '^#|^$' .gitignore))
+  done
   rm -rf `find -name ".git*"`
   tar c $NAMEVERSION | gzip -8 > ~/rpmbuild/SOURCES/$NAMEVERSION.tar.gz
   cd $NAMEVERSION
