@@ -14,4 +14,4 @@ trap "rm -rf $TEMPDIR" EXIT
 $KOJI_CMD list-tagged --quiet --latest $1 | awk '{print $1}' | sort > $TEMPDIR/$1
 $KOJI_CMD list-tagged --quiet --latest $2 | awk '{print $1}' | sort > $TEMPDIR/$2
 
-diff $TEMPDIR/$1 $TEMPDIR/$2
+diff -y $TEMPDIR/$1 $TEMPDIR/$2
