@@ -16,9 +16,11 @@ SPEC=$(ls *.spec | head -n1)
 SPECDIR=$(pwd)
 NAME=$(rpm -q --qf '%{NAME}\n' --specfile "$SPEC" | head -n1)
 VERSION=$(rpm -q --qf '%{VERSION}\n' --specfile "$SPEC" | head -n1)
-NAMEVERSION="$NAME-$VERSION"
+RELEASE=$(rpm -q --qf '%{RELEASE}\n' --specfile "$SPEC" | head -n1)
+SOURCE0=$(spectool --list-files "$SPEC" | awk '{print $2}' | head -n1)
+SOURCEDIR0=$(echo "$SOURCE0" | sed -E 's/.tar.(gz|bz2)//g')
 
-echo "Working on $SPEC ($NAMEVERSION)"
+echo "Working on $SPEC ($SOURCE0/$SOURCEDIR0)"
 
 # build SRPM
 if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
@@ -30,17 +32,18 @@ if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 else
   # sources are most likely part of the git repo
+  echo "Creating source tarball from git..."
   TEMPDIR=$(mktemp -d)
   trap "rm -rf $TEMPDIR" EXIT
-  mkdir $TEMPDIR/$NAMEVERSION
-  cp -Rad . $TEMPDIR/$NAMEVERSION
+  mkdir $TEMPDIR/$SOURCEDIR0
+  cp -Rad . $TEMPDIR/$SOURCEDIR0
   pushd $TEMPDIR >/dev/null
   for g in $(find . -name .gitignore); do
     (cd $(dirname $g) && rm -rf $(egrep -v '^#|^$' .gitignore))
   done
   rm -rf `find -name ".git*"`
-  tar c $NAMEVERSION | gzip -8 > ~/rpmbuild/SOURCES/$NAMEVERSION.tar.gz
-  cd $NAMEVERSION
+  tar c $SOURCEDIR0 | gzip -8 > ~/rpmbuild/SOURCES/$SOURCE0
+  cd $SOURCEDIR0
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
   popd >/dev/null
 fi
@@ -70,18 +73,21 @@ else
     [ -d /usr/src/redhat/RPMS ] && RPMBUILD=/usr/src/redhat
     [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/yum-builddep ] && yum -y install rpm-build yum-utils
     rm -rf \$RPMBUILD/*/*
-    
+
     # install build deps and build (NOT using mock)
     echo "y" | yum-builddep "$SRPM_FILE"
     rpmbuild --rmsource --rmspec --rebuild "$SRPM_FILE" $2 $3 $4
-    
+
     # remove headpin (we are testing only against katello)
     #rm -f \$RPMBUILD/*/*/*headpin*rpm
 
     # if fedora-review is enabled, do it now
-    type -P fedora-review >/dev/null || yum -y install fedora-review
-    fedora-review -n "$NAME" -r -p
-   
+    #type -P fedora-review >/dev/null || yum -y install fedora-review
+    #fedora-review -n "$NAME" -r -p
+
+    # TODO if RHEL6 then
+    #yum -y install ruby193-build scl-utils-build
+
     # install packages and if that fails try to --force it
     echo INSTALLING:
     ls \$RPMBUILD/*/*/*rpm

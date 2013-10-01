@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TAG=$1
+PACKAGE=$2
+KOJI_CMD="koji -c ~/.koji/katello-config"
+DISTROS="rhel6 fedora18 fedora19"
+
+if [ -z "$1" -o -z "$2" ]; then
+  echo "Usage: $0 TAG PACKAGE1 [PACKAGEN]"
+  echo " "
+  echo "Example:"
+  echo " $0 foreman-nightly rubygem-xyz [pkg2] ..."
+  exit 1
+fi
+
+for PACKAGE in ${@:2}; do
+  for DIST in $DISTROS; do
+    if [[ $DIST == "rhel6" && $PACKAGE == rubygem* ]]; then
+      PREFIX="ruby193-"
+    else
+      PREFIX=""
+    fi
+    echo "Adding $PREFIX$PACKAGE to $TAG-$DIST"
+    $KOJI_CMD add-pkg --owner=lzapleta "$TAG-$DIST" "$PREFIX$PACKAGE"
+  done
+done

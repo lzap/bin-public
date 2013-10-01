@@ -1,15 +1,14 @@
 #!/bin/bash
 
+# set to 1 if you want to add ruby193 prefix automatically for rhel6 rubygems
+ADD_PREFIX=0
+
 FROM_TAG=$1
 TO_TAG=$2
 KOJI_CMD="koji -c ~/.koji/katello-config"
-DISTROS="rhel6 fedora18 fedora19"
 
 if [ -z "$1" -o -z "$2" -o -z "$3" ]; then
   echo "Usage: $0 FROM_TAG TO_TAG PACKAGE_NAME"
-  echo " "
-  echo " Do not provide distribution suffixes for tags, it will automatically"
-  echo " work with these: $DISTROS"
   echo " "
   echo "Example:"
   echo " $0 katello-thirdparty foreman-nightly rubygem-xyz [pkg2] ..."
@@ -18,14 +17,13 @@ fi
 
 for PACKAGE in ${@:3}; do
   echo "Retagging $PACKAGE"
-  for DIST in $DISTROS; do
-    echo "Distro $DIST"
-    LAST_BUILD=$($KOJI_CMD latest-build --quiet "$FROM_TAG-$DIST" "$PACKAGE" | awk '{print $1;}')
-    if [ -z "$LAST_BUILD" ]; then
-      echo "No build found in $FROM_TAG-$DIST"
-    else
-      echo "Tagging $LAST_BUILD into $TO_TAG-$DIST"
-      $KOJI_CMD tag-build "$TO_TAG-$DIST" "$LAST_BUILD"
-    fi
-  done
+  LAST_BUILD=$($KOJI_CMD latest-build --quiet "$FROM_TAG" "$PACKAGE" | awk '{print $1;}')
+  if [ -z "$LAST_BUILD" ]; then
+    echo "No build of $PACKAGE found in $FROM_TAG"
+  else
+    #echo "Adding package $PACKAGE into $TO_TAG"
+    #$KOJI_CMD add-pkg --owner=lzapleta "$TO_TAG" "$PACKAGE"
+    echo "Tagging $LAST_BUILD into $TO_TAG"
+    $KOJI_CMD tag-build --nowait "$TO_TAG" "$LAST_BUILD"
+  fi
 done
