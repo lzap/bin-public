@@ -2,15 +2,21 @@
 #
 # Send a scratchbuild from current directory.
 #
-# Usage: sbu [katello|fedora|hostname] [koji-tag] [dist-tag]
+# Usage: sbu [katello|fedora|hostname] [dist-tag] [koji-tag]
 #
 
+set -x
 export LC_ALL=C
 TARGET=${1:-katello}
-KOJI_TAG=${2:-foreman-nightly-rhel6}
-DIST=${3:-.el6}
-[ ${DIST##.} = $DIST ] && DIST=.${DIST}
+DIST=${2:-el6}
+KOJI_TAG=${3:-foreman-nightly-rhel6}
 SRCDIR="$HOME/rpmbuild/SOURCES"
+
+if [ "$DIST" == "el6" ]; then
+  EXTRA_DEFINE="scl ruby193"
+else
+  EXTRA_DEFINE="__nothing 1"
+fi
 
 SPEC=$(ls *.spec | head -n1)
 SPECDIR=$(pwd)
@@ -19,11 +25,11 @@ VERSION=$(rpm -q --qf '%{VERSION}\n' --specfile "$SPEC" | head -n1)
 RELEASE=$(rpm -q --qf '%{RELEASE}\n' --specfile "$SPEC" | head -n1)
 SOURCE0=$(spectool --list-files "$SPEC" | awk '{print $2}' | head -n1)
 SOURCEDIR0=$(echo "$SOURCE0" | sed -E 's/.tar.(gz|bz2)//g')
-
-echo "Working on $SPEC ($SOURCE0/$SOURCEDIR0)"
+[ ${DIST##.} = $DIST ] && DIST=.${DIST}
 
 # build SRPM
 if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
+  echo "Working on $SPEC ($SOURCE0)"
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null
   echo "Downloading sources..."
@@ -31,8 +37,9 @@ if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   popd >/dev/null
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 else
+  echo "Working on $SPEC ($SOURCE0/$SOURCEDIR0)"
   # sources are most likely part of the git repo
-  echo "Creating source tarball from git..."
+  echo "Creating source tarball from working dir..."
   TEMPDIR=$(mktemp -d)
   trap "rm -rf $TEMPDIR" EXIT
   mkdir $TEMPDIR/$SOURCEDIR0
@@ -44,7 +51,7 @@ else
   rm -rf `find -name ".git*"`
   tar c $SOURCEDIR0 | gzip -8 > ~/rpmbuild/SOURCES/$SOURCE0
   cd $SOURCEDIR0
-  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" --define "$EXTRA_DEFINE" | tail -n1 | sed 's/^Wrote: //g')
   popd >/dev/null
 fi
 
@@ -57,6 +64,8 @@ elif [ "$TARGET" == "fedora" ]; then
   koji build --scratch --nowait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora-release" ]; then
   koji build --nowait $KOJI_TAG "$SRPM"
+elif [ "$TARGET" == "mock" ]; then
+  mock "$SRPM"
 else
   # local build on a hostname
   echo "Copying $SRPM to $TARGET"
