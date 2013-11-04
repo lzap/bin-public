@@ -33,7 +33,7 @@ if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null
   echo "Downloading sources..."
-  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -nc -c -q
+  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -nc -c -N
   popd >/dev/null
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 else
