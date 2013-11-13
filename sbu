@@ -12,7 +12,9 @@ DIST=${2:-el6}
 KOJI_TAG=${3:-foreman-nightly-rhel6}
 SRCDIR=$(rpm --eval '%{_sourcedir}')
 
-if [ "$DIST" == "el6" ]; then
+[[ "$DIST" == "el6-nonscl" ]] && NONSCL=1 && DIST=el6
+
+if [[ "$DIST" == "el6" && $NONSCL -ne 1 ]]; then
   EXTRA_DEFINE="scl ruby193"
 else
   EXTRA_DEFINE="__nothing 1"
