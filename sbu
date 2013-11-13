@@ -10,7 +10,7 @@ export LC_ALL=C
 TARGET=${1:-katello}
 DIST=${2:-el6}
 KOJI_TAG=${3:-foreman-nightly-rhel6}
-SRCDIR="$HOME/rpmbuild/SOURCES"
+SRCDIR=$(rpm --eval '%{_sourcedir}')
 
 if [ "$DIST" == "el6" ]; then
   EXTRA_DEFINE="scl ruby193"
@@ -33,7 +33,7 @@ if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null
   echo "Downloading sources..."
-  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -nc -c -N
+  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -c -N --no-check-certificate
   popd >/dev/null
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 else
@@ -56,9 +56,9 @@ else
 fi
 
 # submit the build
-if [ "$TARGET" == "katello" ]; then
+if [ "$TARGET" == "katello" -o "$TARGET" == "koji" ]; then
   koji -c ~/.koji/katello-config build --scratch --nowait $KOJI_TAG "$SRPM"
-elif [ "$TARGET" == "katello-release" ]; then
+elif [ "$TARGET" == "katello-release" -o "$TARGET" == "koji-release" ]; then
   koji -c ~/.koji/katello-config build --nowait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora" ]; then
   koji build --scratch --nowait $KOJI_TAG "$SRPM"
