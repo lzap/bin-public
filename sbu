@@ -5,7 +5,7 @@
 # Usage: sbu [katello|fedora|hostname] [dist-tag] [koji-tag]
 #
 
-set -x
+[ -n "${VERBOSE:+y}" ] && set -x
 export LC_ALL=C
 TARGET=${1:-katello}
 DIST=${2:-el6}
@@ -34,8 +34,14 @@ if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   echo "Working on $SPEC ($SOURCE0)"
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null
-  echo "Downloading sources..."
-  spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}' | xargs -n 1 -P 4 wget -c -N --no-check-certificate
+  echo "Copying and downloading sources..."
+  for f in $(spectool --list-files "$SPECDIR/$SPEC" | awk '{print $2}'); do
+    if [ -e "$SPECDIR/$f" ]; then
+      cp -a ${VERBOSE:+-v} $SPECDIR/$f . >&2
+    else
+      echo $f
+    fi
+  done | xargs -n 1 -P 4 wget -c -N --no-check-certificate ${VERBOSE:=-q}
   popd >/dev/null
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
 else
