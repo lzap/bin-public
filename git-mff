@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# Rebase & Merge & Push a remote branch
+
+[[ "$1" == "" ]] && echo "Usage: $0 remote/branch" && exit 1
+#set -x
+
+blah() {
+  echo -e "\e[1m$1\e[0m"
+}
+
+push_that() {
+  git --no-pager log --graph --pretty=format:'%Cred%h%Creset %s %C(bold blue)<%an>%Creset' \
+    --abbrev-commit "origin/$1..$1"
+  echo -en "\n"
+  blah "[*] DRY-PUSHING"
+  git push -n
+  blah "[*] PUSH NOW FOR REAL [ENTER]?" && read && git push
+}
+
+blah "[*] UPDATING"
+git checkout develop 2>/dev/null || \
+  git checkout master 2>/dev/null || \
+  git checkout gh-pages 2>/dev/null
+PARENT=$(git rev-parse --abbrev-ref HEAD)
+git fetch --all
+git pull
+blah "[*] FAST-FORWARD MERGE ATTEMPT :-)"
+if git merge --ff-only "$1"; then
+  push_that "$PARENT"
+else
+  BRANCH=$(date +mff-temp-%Y%m%d-%H%M%S)
+  blah "[*] REBASE AND MERGE (IN BRANCH $BRANCH)"
+  trap "git branch -D '$BRANCH'" EXIT
+  git checkout -B "$BRANCH" "$1" && git rebase "$PARENT" && \
+    git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"
+fi
