@@ -30,8 +30,8 @@ if git merge --ff-only "$1"; then
   push_that "$PARENT"
 else
   BRANCH=$(date +mff-temp-%Y%m%d-%H%M%S)
-  blah "[*] REBASE AND MERGE (IN BRANCH $BRANCH)"
   trap "git branch -D '$BRANCH'" EXIT
+  blah "[*] REBASE AND MERGE (IN BRANCH $BRANCH)"
   git checkout -B "$BRANCH" "$1" && git rebase "$PARENT" && \
     git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"
 fi
