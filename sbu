@@ -2,7 +2,7 @@
 #
 # Send a scratchbuild from current directory.
 #
-# Usage: sbu [katello|fedora|hostname] [dist-tag] [koji-tag]
+# Usage: sbu [katello|fedora|brew|hostname] [dist-tag] [koji-tag]
 #
 
 [ -n "${VERBOSE:+y}" ] && set -x
@@ -72,6 +72,8 @@ elif [ "$TARGET" == "fedora" ]; then
   koji build --scratch --nowait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora-release" ]; then
   koji build --nowait $KOJI_TAG "$SRPM"
+elif [ "$TARGET" == "brew" ]; then
+  brew build --scratch --nowait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "mock" ]; then
   mock "$SRPM"
 else
