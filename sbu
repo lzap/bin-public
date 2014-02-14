@@ -65,15 +65,15 @@ fi
 
 # submit the build
 if [ "$TARGET" == "katello" -o "$TARGET" == "koji" ]; then
-  koji -c ~/.koji/katello-config build --scratch --nowait $KOJI_TAG "$SRPM"
+  koji -c ~/.koji/katello-config build --scratch --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "katello-release" -o "$TARGET" == "koji-release" ]; then
-  koji -c ~/.koji/katello-config build --nowait $KOJI_TAG "$SRPM"
+  koji -c ~/.koji/katello-config build --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora" ]; then
-  koji build --scratch --nowait $KOJI_TAG "$SRPM"
+  koji build --scratch --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora-release" ]; then
-  koji build --nowait $KOJI_TAG "$SRPM"
+  koji build --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "brew" ]; then
-  brew build --scratch --nowait $KOJI_TAG "$SRPM"
+  brew build --scratch --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "mock" ]; then
   mock "$SRPM"
 else
