@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Rebase & Merge & Push a remote branch
+# Rebase & Merge & Push a remote branch using hub/git
 
 [[ "$1" == "" ]] && echo "Usage: $0 remote/branch" && exit 1
 #set -x
@@ -25,13 +25,17 @@ git checkout develop 2>/dev/null || \
 PARENT=$(git rev-parse --abbrev-ref HEAD)
 git fetch --all
 git pull
+blah "[*] CHECKING OUT USING HUB"
+hub checkout "$1" || git checkout "$1"
+FROM=$(git rev-parse --abbrev-ref HEAD)
+git checkout "$PARENT"
 blah "[*] FAST-FORWARD MERGE ATTEMPT :-)"
-if git merge --ff-only "$1"; then
+if git merge --ff-only "$FROM"; then
   push_that "$PARENT"
 else
   BRANCH=$(date +mff-temp-%Y%m%d-%H%M%S)
   trap "git branch -D '$BRANCH'" EXIT
   blah "[*] REBASE AND MERGE (IN BRANCH $BRANCH)"
-  git checkout -B "$BRANCH" "$1" && git rebase "$PARENT" && \
+  git checkout -B "$BRANCH" "$FROM" && git rebase "$PARENT" && \
     git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"
 fi

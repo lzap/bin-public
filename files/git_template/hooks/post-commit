@@ -1,0 +1,2 @@
+#!/bin/sh
+$HOME/.git_hooks/post-commit

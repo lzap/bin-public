@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# You need to configure vim to load .git/tags (or install Fugitive.vim).
+#
+LANGS="-sql,-cobol"
+
+mkdir .git/tags_lock 2>/dev/null || exit 0
+trap "rmdir .git/tags_lock; rm -f .git/tags.tmp" EXIT
+
+if [[ -f Rakefile || -f Gemfile ]]; then
+  # ruby-only tags
+  ripper-tags -R --force --tag-relative -f .git/tags.tmp
+else
+  # general purpose ctags
+  ctags --tag-relative -R -f .git/tags.tmp --exclude=.git "--languages=$LANGS"
+fi
+
+mv .git/tags.tmp .git/tags
