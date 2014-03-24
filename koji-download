@@ -9,7 +9,11 @@ else
      exit 1
 fi
 
-DIR=$(mktemp -du -t koji-XXXX)
+if [ -z "$KOJIDIR" ]; then
+  DIR=$(mktemp -du -t koji-XXXX)
+else
+  DIR="$KOJIDIR"
+fi
 mkdir $DIR
 pushd $DIR >/dev/null
 

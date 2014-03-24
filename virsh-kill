@@ -1,0 +1,9 @@
+#!/bin/bash
+
+[ -z "$1" ] && echo "Usage: $0 domain" && exit 1
+
+sudo virsh destroy "$1"
+sudo virsh undefine "$1"
+rm -fv /mnt/data/images/$1-disk1
+
+sudo virsh list --all
