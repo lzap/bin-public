@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# defaults
+DISTRO="RHEL-6.5"
+VARIANT="" # default: Server
+FAMILY="" # default: RedHatEnterpriseLinux6
+RESERVE=""
+PARAMS=""
+TASKS="" # e.g. /Satellite-6/Installation/Foreman-develop
+
+hlp() {
+  echo
+  echo "Use: $0 -t /Task/1 -t /Task/2 ..."
+  echo
+  echo " -w "Custom whiteboard comment"         test whiteboard"
+  echo " -d RHEL-6.5                            distro version"
+  echo " -v Server                              distro variant"
+  echo " -f RedHatEnterpriseLinux6              distro family"
+  echo " -t /Task/Name/Multiple/Options/OK      task name"
+  echo " -p 'PARAM1=VALUE1 PARAM2=VALUE2 ...'   job parameters"
+  echo " -r                                     reserve system"
+  exit 1
+}
+
+# options
+while getopts ":f:d:v:w:rp:t:" opt; do
+  case $opt in
+    d)
+      DISTRO="$OPTARG"
+      ;;
+    v)
+      VARIANT="--variant=$OPTARG"
+      ;;
+    f)
+      FAMILY="--family=$OPTARG"
+      ;;
+    w)
+      WHITEBOARD="$OPTARG"
+      ;;
+    r)
+      RESERVE="--task=/distribution/reservesys"
+      ;;
+    t)
+      TASKS="$TASKS --task=$OPTARG"
+      ;;
+    p)
+      PARAMS="--taskparam=\"$OPTARG\" "
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      hlp
+      ;;
+  esac
+done
+
+[ -z "$TASKS" ] && echo "Provide at least one task [-t option]" && hlp
+
+WHITEBOARD=${WHITEBOARD:-"MYBKR $DISTRO $FAMILY $VARIANT"}
+echo "Submitting job $WHITEBOARD"
+/usr/bin/bkr workflow-simple \
+--distro="$DISTRO" $VARIANT $FAMILY \
+--whiteboard="$WHITEBOARD" \
+--arch=x86_64 \
+--keyvalue="MEMORY>1399" \
+--keyvalue="DISK>6999" \
+$TASKS $RESERVE $PARAMS
