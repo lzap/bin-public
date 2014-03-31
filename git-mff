@@ -29,13 +29,11 @@ blah "[*] CHECKING OUT USING HUB"
 hub checkout "$1" || git checkout "$1"
 FROM=$(git rev-parse --abbrev-ref HEAD)
 git checkout "$PARENT"
-blah "[*] FAST-FORWARD MERGE ATTEMPT :-)"
-if git merge --ff-only "$FROM"; then
-  push_that "$PARENT"
-else
-  BRANCH=$(date +mff-temp-%Y%m%d-%H%M%S)
-  trap "git branch -D '$BRANCH'" EXIT
-  blah "[*] REBASE AND MERGE (IN BRANCH $BRANCH)"
-  git checkout -B "$BRANCH" "$FROM" && git rebase "$PARENT" && \
-    git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"
-fi
+BRANCH=$(date +mff-temp-%Y%m%d-%H%M%S)
+trap "git branch -D '$BRANCH'" EXIT
+blah "[*] REBASE AND AMEND AND MERGE (IN BRANCH $BRANCH)"
+git checkout -B "$BRANCH" "$FROM" && \
+  git rebase "$PARENT" && \
+  git commit --amend && \
+  git checkout "$PARENT" && \
+  git merge --ff-only "$BRANCH" && push_that "$PARENT"
