@@ -109,7 +109,9 @@ done
 
 FQDN=${NAME}.${DOMAIN}
 IMAGE=${IMAGEDIR}/$NAME.img
-TMP=/tmp/virt-builder.tmp
+TMP_BOOTSCRIPT=$(mktemp)
+TMP_SCRIPT=$(mktemp)
+trap "rm -f $TMP_BOOTSCRIPT $TMP_SCRIPT" EXIT
 MAC="52:54:01$(echo "$(hostname)${NAME}" | openssl dgst -md5 -binary | hexdump -e '/1 ":%02x"' -n 3)"
 
 echo "Reading your public ssh key"
@@ -119,7 +121,7 @@ echo "Stopping and removing $NAME if exists"
 $SUDO virsh destroy $NAME >/dev/null 2>&1
 $SUDO virsh undefine $NAME >/dev/null 2>&1
 
-cat <<EOF > $TMP
+cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
 cd /root
 export KOJI_BUILD="$KOJI_BUILD"
@@ -131,19 +133,23 @@ git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats
 fb-install-foreman.bats
-EOF
+EOFBS
+
+cat <<EOFS > $TMP_SCRIPT
+mkdir /root/.ssh
+echo $PUBLIC_KEY > /root/.ssh/authorized_keys
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+restorecon -R /root
+EOFS
 
 echo "Building new image based on $DISTRO"
 $SUDO virt-builder $DISTRO \
   -o $IMAGE \
   --root-password password:redhat \
   --hostname $FQDN \
-  --firstboot $TMP \
-  --run-command 'mkdir /root/.ssh' \
-  --write "/root/.ssh/authorized_keys:$PUBLIC_KEY" \
-  --run-command 'chmod 700 /root/.ssh' \
-  --run-command 'chmod 600 /root/.ssh/authorized_keys' \
-  --run-command 'restorecon -R /root' \
+  --run $TMP_SCRIPT \
+  --firstboot $TMP_BOOTSCRIPT \
   || exit 2
 
 echo "Spawning new VM with MAC address $MAC"
