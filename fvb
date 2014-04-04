@@ -123,8 +123,9 @@ $SUDO virsh undefine $NAME >/dev/null 2>&1
 
 cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
-cd /root
 export KOJI_BUILD="$KOJI_BUILD"
+export HOME=/root
+cd \$HOME
 set -x
 type git || yum -y install git || apt-get -y install git
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
