@@ -5,26 +5,45 @@ cat <<USAGE
 usage: $0 options -- VARIABLE1=value1 ...
 
 Script for building images with Foreman preinstalled using virt-builder and
-bats suite on local libvirt host. The script also modifies dnsmasq configuration
-and sends SIGHUP to refresh so the hostname is instantly available.
-
+bats suite on local libvirt host. The script also modifies dnsmasq
+configuration and sends SIGHUP to refresh so the hostname is instantly
+available. The root password is "redhat" but you should have your public
+ssh key installed by default.
 
 OPTIONS:
   --help | -h
         Show this message
+
   --name | -n
-        Image name (default: $NAME)
+        Image name, default: $NAME
+
   --distro | -d
-        Distribution base image for virt-builder (default: $DISTRO)
+        Distribution base image for virt-builder
+        Default: $DISTRO
+
   --force | -f
         Overwrite target image and VM if they exist
+
+  --no-sudo
+        Do not use sudo for building and running VM - you will need to
+        set --image-dir accordingly too when running under regular user.
+
   --image-dir [path]
-        Target images path (default: $IMAGEDIR)
+        Target images path
+        Default: $IMAGEDIR
+
   --domain [domain]
-        Domain suffix like "mycompany.com" (default: $DOMAIN)
+        Domain suffix like "mycompany.com"
+        Default: $DOMAIN
+
   --hosts [file]
         Path to hosts file that is modified with FQDN/IP
-        (default: $HOSTS)
+        Default: $HOSTS
+
+  --pub-key [key]
+        Install this public ssh key
+        Default: $PUBKEY
+
   --install-deps
         Install required dependencies
 
@@ -35,7 +54,7 @@ configuration (e.g. /etc/dnsmasq.d/read-libvirt-hosts).
 
 Example:
 
-  fvb -n bz981123 "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
+  fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
 
 USAGE
 }
@@ -45,8 +64,11 @@ DOMAIN=libvirt
 DISTRO=centos-6
 IMAGEDIR=/var/lib/libvirt/images
 HOSTS=/var/lib/libvirt/dnsmasq/default.addnhosts
+PUBKEY=$HOME/.ssh/id_rsa.pub
+FORCE=0
+SUDO=sudo
 
-if ! options=$(getopt -o hfn:d: -l help,name:,distro:,install-deps,image-dir:,domain:,hosts: -- "$@"); then
+if ! options=$(getopt -o hfn:d: -l help,name:,distro:,pub-key:,install-deps,image-dir:,domain:,no-sudo,hosts: -- "$@"); then
   exit 1
 fi
 
@@ -59,7 +81,9 @@ while [ $# -gt 0 ]; do
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
     --hosts) HOSTS="$2" ; shift ;;
-    --install-deps) sudo yum -y install openssl virt-install libguestfs util-linux ;;
+    --pub-key) PUBKEY="$2" ; shift ;;
+    --install-deps) sudo yum -y install openssl virt-install libguestfs util-linux sudo ;;
+    --no-sudo) SUDO='' ;;
     --force|-f) FORCE=1 ;;
     --help|-h) usage;  exit ;;
     (--) shift; break;;
@@ -69,7 +93,16 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-echo "Parsing arguments"
+if [[ FORCE -eq 0 ]]; then
+  if [[ -f ${IMAGE} ]]; then
+    echo "Image $IMAGE exists, use --force Luke!"; exit 1
+  fi
+  if $SUDO virsh domstate $NAME >/dev/null 2>&1; then
+    echo "Domain $NAME exists, use --force Luke!"; exit 1
+  fi
+fi
+
+echo "Parsing extra arguments"
 while [ $# -gt 0 ]; do
   echo "$1"; eval "$1"; shift
 done
@@ -79,36 +112,42 @@ IMAGE=${IMAGEDIR}/$NAME.img
 TMP=/tmp/virt-builder.tmp
 MAC="52:54:01$(echo "$(hostname)${NAME}" | openssl dgst -md5 -binary | hexdump -e '/1 ":%02x"' -n 3)"
 
-echo "Stopping and removing $NAME"
-sudo virsh destroy $NAME >/dev/null
-sleep 1
-sudo virsh undefine $NAME >/dev/null
-sleep 3
+echo "Reading your public ssh key"
+PUBLIC_KEY=$(cat $PUBKEY)
+
+echo "Stopping and removing $NAME if exists"
+$SUDO virsh destroy $NAME >/dev/null 2>&1
+$SUDO virsh undefine $NAME >/dev/null 2>&1
 
 cat <<EOF > $TMP
 #!/bin/sh
 cd /root
+export KOJI_BUILD="$KOJI_BUILD"
 set -x
 type git || yum -y install git || apt-get -y install git
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
 git clone https://github.com/theforeman/foreman-bats.git && foreman-bats/install.sh /usr/local
 git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
-export KOJI_BUILD="$KOJI_BUILD"
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats
 fb-install-foreman.bats
 EOF
 
 echo "Building new image based on $DISTRO"
-sudo virt-builder $DISTRO \
+$SUDO virt-builder $DISTRO \
   -o $IMAGE \
   --root-password password:redhat \
   --hostname $FQDN \
   --firstboot $TMP \
+  --run-command 'mkdir /root/.ssh' \
+  --write "/root/.ssh/authorized_keys:$PUBLIC_KEY" \
+  --run-command 'chmod 700 /root/.ssh' \
+  --run-command 'chmod 600 /root/.ssh/authorized_keys' \
+  --run-command 'restorecon -R /root' \
   || exit 2
 
 echo "Spawning new VM with MAC address $MAC"
-sudo virt-install --import \
+$SUDO virt-install --import \
   --os-variant rhel6 \
   --name $NAME \
   --ram 2500 \
@@ -129,13 +168,13 @@ echo "The new guest received $IPADDR"
 
 echo "Setting dnsmasq for host $FQDN"
 if grep "$FQDN" $HOSTS >/dev/null; then
-  sudo sed -i "s/.*$FQDN.*/$IPADDR $FQDN/g" $HOSTS
+  $SUDO sed -i "s/.*$FQDN.*/$IPADDR $FQDN/g" $HOSTS
 else
-  sudo bash -c "echo '$IPADDR $FQDN' >> $HOSTS"
+  $SUDO bash -c "echo '$IPADDR $FQDN' >> $HOSTS"
 fi
 
 echo "Refreshing dnsmasq configuration"
-sudo pkill -SIGHUP dnsmasq
+$SUDO pkill -SIGHUP dnsmasq
 
 echo "Done! Your guest networking should be up and running soon."
 echo "Login and watch virt-sysprep-firstboot.log for progress."
