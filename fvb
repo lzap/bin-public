@@ -18,8 +18,7 @@ OPTIONS:
         Image name, default: $NAME
 
   --distro | -d
-        Distribution base image for virt-builder
-        Default: $DISTRO
+        Distribution base image for virt-builder, default: $DISTRO
 
   --force | -f
         Overwrite target image and VM if they exist
@@ -33,8 +32,7 @@ OPTIONS:
         Default: $IMAGEDIR
 
   --domain [domain]
-        Domain suffix like "mycompany.com"
-        Default: $DOMAIN
+        Domain suffix like "mycompany.com", default: $DOMAIN
 
   --hosts [file]
         Path to hosts file that is modified with FQDN/IP
@@ -54,6 +52,7 @@ configuration (e.g. /etc/dnsmasq.d/read-libvirt-hosts).
 
 Example:
 
+  fvb -n my-nightly-foreman -f
   fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
 
 USAGE
