@@ -1,12 +1,12 @@
 #!/bin/bash
 
 if [ "${1/http*brewweb.devel.redhat.com*/X}" == 'X' ] ; then
-        KOJI=http://brewweb.devel.redhat.com/koji/
+  KOJI=http://brewweb.devel.redhat.com/koji/
 elif [ "${1/http*koji.katello.org*/X}" = 'X' ] ; then
-        KOJI=http://koji.katello.org/koji/
+  KOJI=http://koji.katello.org/koji/
 else
-     echo unknown koji
-     exit 1
+  echo unknown koji
+  exit 1
 fi
 
 if [ -z "$KOJIDIR" ]; then
