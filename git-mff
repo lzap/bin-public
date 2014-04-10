@@ -13,6 +13,8 @@ push_that() {
   git --no-pager log --graph --pretty=format:'%Cred%h%Creset %s %C(bold blue)<%an>%Creset' \
     --abbrev-commit "origin/$1..$1"
   echo -en "\n"
+  blah "[*] SHOWING STATS"
+  git diff "$PARENT..HEAD" --stat
   blah "[*] DRY-PUSHING"
   git push -n
   blah "[*] PUSH NOW FOR REAL [ENTER]?" && read && git push
@@ -35,5 +37,10 @@ blah "[*] REBASE AND AMEND AND MERGE (IN BRANCH $BRANCH)"
 git checkout -B "$BRANCH" "$FROM" && \
   git rebase "$PARENT" && \
   git commit --amend && \
-  git checkout "$PARENT" && \
-  git merge --ff-only "$BRANCH" && push_that "$PARENT"
+  git diff "$PARENT..HEAD" --stat
+echo "Spawning interactive shell. Feel free to rebase, merge, cherry-pick"
+echo "and type 'exit' when done. The merging script will continue. You will"
+echo "still able to cancel it before pushing to remote."
+bash
+git diff "$PARENT..HEAD"
+git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"

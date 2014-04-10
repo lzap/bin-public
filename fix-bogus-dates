@@ -1,0 +1,55 @@
+#!/bin/bash
+# Copyright 2014 Edward J Huff ejhuff at gmail.com, not a work for hire.
+# License: any GPL or BSD or MIT or any free software license.
+
+# bash script to fix bogus weekdays in rpm spec files.
+
+# This script automatically corrects bogus weekdays in spec files, generating a
+# changelog entry and adding a line after the bogus date noting the original date.
+# (The weekday might have been correct and the day of the month wrong).
+# The input file is copied to a backup file, and a diff is printed.
+
+[[ $# > 0 ]] || { echo "Usage: $0 packagename.spec ..."; exit 1; }
+Www='[A-Z][a-z][a-z]'
+Mmm='[A-Z][a-z][a-z]'
+DD='[0-9][0-9]'
+YYYY='[12][90][0-9][0-9]'
+WwwMmmDDYYYY="\($Www\) \($Mmm\) \($DD\) \($YYYY\)"
+
+while [[ $# > 0 ]]; do
+    [[ -f "$1" ]] || { echo "$0: $1: no such file."; exit 1; }
+    changelog=$(mktemp --tmpdir=. changelog-XXXXXXXXX.txt)
+    sedscript=$(mktemp --tmpdir=. sedscript-XXXXXXXXX.sed)
+    printf "%s\n" \
+	"* $(date +'%a %b %d %Y') BogusDateBot" \
+	'- Eliminated rpmbuild "bogus date" warnings due to inconsistent weekday,' \
+	"  by assuming the date is correct and changing the weekday." \
+	> "$changelog"
+    cat "$1" | \
+	grep "^\* $Www $Mmm $DD $YYYY" | \
+	grep -v '^echo' | \
+	sed 's/^\* '"$WwwMmmDDYYYY"'.*$/echo "$(date --date="\2 \3 \4" +"%a \1 %b %d %Y")"/' | \
+	grep '^echo' | \
+	bash | \
+	egrep -v "Mon Mon|Tue Tue|Wed Wed|Thu Thu|Fri Fri|Sat Sat|Sun Sun" | \
+	sort -u --key=5,5n --key=3,3M --key=4,4n | \
+	while read correct wrong Month Day Year; do
+            date="$Month $Day $Year"
+            alternatives="$wrong $Month $Day $Year --> "$(
+		for ((i = -6; i < 7; i++ )); do
+		    date --date "$date $i day" +"%a %b %d %Y or ";
+		done | egrep "$date|$wrong" | tr -d \\n;
+		printf "%s" "....")
+	    printf "  %s\n" "$alternatives" >> "$changelog"
+            re='^\* '"$wrong $Month $Day $Year"'\(.*\)$'
+            subs='* '"$correct $Month $Day $Year"'\1\n  '"$alternatives"
+            printf "%s\n" "s:$re:$subs:" >> "$sedscript"
+        done
+    printf "\n" >> "$changelog"
+    backup="$1"-$(date --utc --ref="$1" +"%Y-%m-%d-%H-%M-%S-%NZ")
+    cp -vpf "$1" "$backup"
+    cat "$backup" | sed -f "$sedscript" -e '/^%changelog *$/ r '"$changelog" > "$1"
+    rm -f "$changelog" "$sedscript"
+    diff -u "$backup" "$1"
+    shift
+done
