@@ -1,0 +1,7 @@
+#!/bin/bash
+TAG=${1:-FOREMAN_NIGHTLY_RHEL}
+JOB=$(bkr job-list --mine -w "$TAG" --format list | sort | tail -n1)
+echo Job found: $JOB
+HOST=$(bkr job-results $JOB --prettyxml | grep -o '"[a-zA-Z0-9\.-]*.redhat.com"' | sed 's/"//g' | tail -n1)
+echo Host found: $HOST
+ssh $HOST

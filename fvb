@@ -34,40 +34,50 @@ OPTIONS:
   --domain [domain]
         Domain suffix like "mycompany.com", default: $DOMAIN
 
-  --hosts [file]
-        Path to hosts file that is modified with FQDN/IP
-        Default: $HOSTS
+  --subnet [subnet]
+        Subnet to be used for writing DHCP/DNS configuration
+        Default: $SUBNET (note there is no suffix or period)
 
   --pub-key [key]
         Install this public ssh key
         Default: $PUBKEY
 
+  --script [name]
+        BATS script to execute during first boot (can be any shell command)
+        Default: $SCRIPT
+
   --install-deps
         Install required dependencies
 
-When using dnsmasq as a primary DNS local caching daemon, add this to your
-configuration (e.g. /etc/dnsmasq.d/read-libvirt-hosts).
+To have this integrated with local dnsmasq (and libvirt), put the following
+in dnsmasq configuration (e.g. into /etc/dnsmasq.d/local.lan):
 
   addn-hosts=/var/lib/libvirt/dnsmasq/default.addnhosts
+
+And then configure the local dnsmasq to be primary DNS server for your
+workstation (127.0.0.1 in /etc/resolv.conf).
 
 Example:
 
   fvb -n my-nightly-foreman -f
+  fvb -n rc-foreman -- "FOREMAN_REPO=rc" "MYVAR=value"
+  fvb -n stable-foreman -- "FOREMAN_REPO=releases/1.4"
   fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
 
 USAGE
 }
 
 NAME=nightly
-DOMAIN=libvirt
+DOMAIN=local.lan
 DISTRO=centos-6
 IMAGEDIR=/var/lib/libvirt/images
-HOSTS=/var/lib/libvirt/dnsmasq/default.addnhosts
+SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
 FORCE=0
 SUDO=sudo
+SCRIPT=fb-install-foreman.bats
 
-if ! options=$(getopt -o hfn:d: -l help,name:,distro:,pub-key:,install-deps,image-dir:,domain:,no-sudo,hosts: -- "$@"); then
+if ! options=$(getopt -o hfn:d: -l help,name:,distro:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet: -- "$@"); then
   exit 1
 fi
 
@@ -79,9 +89,10 @@ while [ $# -gt 0 ]; do
     --distro|-d) DISTRO="$2" ; shift ;;
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
-    --hosts) HOSTS="$2" ; shift ;;
+    --subnet) SUBNET="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
-    --install-deps) sudo yum -y install openssl virt-install libguestfs util-linux sudo ;;
+    --script) SCRIPT="$2" ; shift ;;
+    --install-deps) sudo yum -y install openssl virt-install libguestfs util-linux sudo libxml2 fortune ;;
     --no-sudo) SUDO='' ;;
     --force|-f) FORCE=1 ;;
     --help|-h) usage;  exit ;;
@@ -92,37 +103,53 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+echo "Parsing extra arguments"
+EXPORTS=""
+while [ $# -gt 0 ]; do
+  echo "$1"; eval "$1"
+  EXPORTS+="export $1"
+  shift
+done
+
+FQDN=${NAME}.${DOMAIN}
+IMAGE=${IMAGEDIR}/$FQDN.img
+MAC="52:54:01$(echo "$(hostname)${FQDN}" | openssl dgst -md5 -binary | hexdump -e '/1 ":%02x"' -n 3)"
+TMP_BOOTSCRIPT=$(mktemp)
+TMP_SCRIPT=$(mktemp)
+trap "rm -f $TMP_BOOTSCRIPT $TMP_SCRIPT" EXIT
+
 if [[ FORCE -eq 0 ]]; then
   if [[ -f ${IMAGE} ]]; then
     echo "Image $IMAGE exists, use --force Luke!"; exit 1
   fi
-  if $SUDO virsh domstate $NAME >/dev/null 2>&1; then
-    echo "Domain $NAME exists, use --force Luke!"; exit 1
+  if $SUDO virsh domstate $FQDN >/dev/null 2>&1; then
+    echo "Domain $FQDN exists, use --force Luke!"; exit 1
   fi
 fi
 
-echo "Parsing extra arguments"
-while [ $# -gt 0 ]; do
-  echo "$1"; eval "$1"; shift
-done
-
-FQDN=${NAME}.${DOMAIN}
-IMAGE=${IMAGEDIR}/$NAME.img
-TMP_BOOTSCRIPT=$(mktemp)
-TMP_SCRIPT=$(mktemp)
-trap "rm -f $TMP_BOOTSCRIPT $TMP_SCRIPT" EXIT
-MAC="52:54:01$(echo "$(hostname)${NAME}" | openssl dgst -md5 -binary | hexdump -e '/1 ":%02x"' -n 3)"
+echo "Stopping and removing $FQDN if exists"
+$SUDO virsh destroy $FQDN >/dev/null 2>&1
+$SUDO virsh undefine $FQDN >/dev/null 2>&1
 
 echo "Reading your public ssh key"
 PUBLIC_KEY=$(cat $PUBKEY)
 
-echo "Stopping and removing $NAME if exists"
-$SUDO virsh destroy $NAME >/dev/null 2>&1
-$SUDO virsh undefine $NAME >/dev/null 2>&1
+echo "Removing existing DHCP/DNS configuration from libvirt"
+netdump="$SUDO virsh net-dumpxml default"
+virsh_dhcp=$($netdump | xmllint --xpath "/network/ip/dhcp/host[@mac='$MAC']" - 2>/dev/null)
+virsh_dns=$($netdump | xmllint --xpath "/network/dns/host/hostname[text()='$FQDN']/parent::host" - 2>/dev/null)
+$SUDO virsh net-update default delete ip-dhcp-host --xml "$virsh_dhcp" --live --config 2>/dev/null
+$SUDO virsh net-update default delete dns-host --xml "$virsh_dns" --live --config 2>/dev/null
+
+RANDOMIP=$(( ( RANDOM % 250 )  + 2 ))
+AIP="${SUBNET}.${RANDOMIP}"
+echo "Deploying DHCP/DNS configuration via libvirt for $AIP"
+$SUDO virsh net-update default add-last ip-dhcp-host --xml "<host mac='$MAC' name='$FQDN' ip='$AIP'/>" --live --config
+$SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostname>$FQDN</hostname></host>"  --live --config
 
 cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
-export KOJI_BUILD="$KOJI_BUILD"
+$EXPORTS
 export HOME=/root
 cd \$HOME
 set -x
@@ -132,7 +159,7 @@ git clone https://github.com/theforeman/foreman-bats.git && foreman-bats/install
 git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats
-fb-install-foreman.bats
+$SCRIPT
 EOFBS
 
 cat <<EOFS > $TMP_SCRIPT
@@ -155,7 +182,7 @@ $SUDO virt-builder $DISTRO \
 echo "Spawning new VM with MAC address $MAC"
 $SUDO virt-install --import \
   --os-variant rhel6 \
-  --name $NAME \
+  --name $FQDN \
   --ram 2500 \
   --disk path=$IMAGE,format=raw,bus=virtio \
   --graphics spice \
@@ -165,26 +192,21 @@ $SUDO virt-install --import \
   || exit 3
 echo "First boot initiated and the VM is resizing drive"
 
+echo "Refreshing local dnsmasq configuration"
+$SUDO pkill -SIGHUP dnsmasq
+
 # set hostname on the libvirt dns
 echo "Waiting for IP address to show up"
 i=0; until [ $i -ge 200 ] || IPADDR=$(arp -an | grep $MAC | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'); do
   i=$((i + 1)); sleep 1
 done
-echo "The new guest received $IPADDR"
-
-echo "Setting dnsmasq for host $FQDN"
-if grep "$FQDN" $HOSTS >/dev/null; then
-  $SUDO sed -i "s/.*$FQDN.*/$IPADDR $FQDN/g" $HOSTS
-else
-  $SUDO bash -c "echo '$IPADDR $FQDN' >> $HOSTS"
-fi
-
-echo "Refreshing dnsmasq configuration"
-$SUDO pkill -SIGHUP dnsmasq
+echo "The new guest received $IPADDR (expected $AIP)"
 
 echo "Done! Your guest networking should be up and running soon."
 echo "Login and watch virt-sysprep-firstboot.log for progress."
-echo "The link is https://$FQDN"
+echo
+echo " ssh root@$FQDN"
+echo " https://$FQDN"
 echo
 type fortune >/dev/null && fortune
 
