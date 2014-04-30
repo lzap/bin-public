@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# To get completion working source ~/bin/public/files/completion.d/*
+#
+sudo virsh $1 start
