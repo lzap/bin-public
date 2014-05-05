@@ -2,5 +2,5 @@
 #
 # To get completion working source ~/bin/public/files/completion.d/*
 #
-sudo virsh $1 destroy && \
-sudo virsh $1 undefine
+sudo virsh destroy $1 && \
+sudo virsh undefine $1

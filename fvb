@@ -63,6 +63,7 @@ Example:
   fvb -n rc-foreman -- "FOREMAN_REPO=rc" "MYVAR=value"
   fvb -n stable-foreman -- "FOREMAN_REPO=releases/1.4"
   fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
+  fvb -n my-own-script --script fb-xyz.bats -- BATS_REPOOWNER=lzap BATS_BRANCH=test
 
 USAGE
 }
@@ -105,6 +106,7 @@ done
 
 echo "Parsing extra arguments"
 EXPORTS=""
+BATS_REPOOWNER="theforeman"
 while [ $# -gt 0 ]; do
   echo "$1"; eval "$1"
   EXPORTS+="export $1"
@@ -155,7 +157,7 @@ cd \$HOME
 set -x
 type git || yum -y install git || apt-get -y install git
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
-git clone https://github.com/theforeman/foreman-bats.git && foreman-bats/install.sh /usr/local
+git clone https://github.com/$BATS_REPOOWNER/foreman-bats.git -b $BATS_BRANCH && foreman-bats/install.sh /usr/local
 git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats

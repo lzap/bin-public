@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Helper script to push to own github fork repo and to open a request
+# using "hub" helper tool.
+#
+REMOTE=$USER
+BRANCH=`git symbolic-ref -q HEAD | sed "s|refs/heads/||"`
+
+echo "Pushing the following commits to $REMOTE/$BRANCH"
+git --no-pager log HEAD^! --abbrev-commit --pretty=oneline
+
+if ! git push --set-upstream $REMOTE $BRANCH; then
+  # remote branch already exists - try to force push
+  echo "Push failed, try again with --force?"
+  read && git push --set-upstream $REMOTE $BRANCH --force
+else
+  # remote branch was new - offer creating a pull-request
+  git branch
+  read -p "Open a pull-request (d - develop; m = master; g = gh-pages; other key skips) ?" response
+  case $response in
+    [Mm]* ) hub pull-request $*;;
+    [Dd]* ) hub pull-request -b develop $*;;
+    [Gg]* ) hub pull-request -b gh-pages $*;;
+    * ) echo "Not creating pull-request";;
+  esac
+fi
+
