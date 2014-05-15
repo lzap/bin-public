@@ -107,6 +107,7 @@ done
 echo "Parsing extra arguments"
 EXPORTS=""
 BATS_REPOOWNER="theforeman"
+BATS_BRANCH="master"
 while [ $# -gt 0 ]; do
   echo "$1"; eval "$1"
   EXPORTS+="export $1"
@@ -183,6 +184,7 @@ $SUDO virt-builder $DISTRO \
 
 echo "Spawning new VM with MAC address $MAC"
 $SUDO virt-install --import \
+  --cpu host \
   --os-variant rhel6 \
   --name $FQDN \
   --ram 2500 \
