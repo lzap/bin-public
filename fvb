@@ -50,12 +50,22 @@ OPTIONS:
         Install required dependencies
 
 To have this integrated with local dnsmasq (and libvirt), put the following
-in dnsmasq configuration (e.g. into /etc/dnsmasq.d/local.lan):
+in dnsmasq configuration:
 
+  # cat /etc/dnsmasq.d/local.lan
   addn-hosts=/var/lib/libvirt/dnsmasq/default.addnhosts
 
-And then configure the local dnsmasq to be primary DNS server for your
-workstation (127.0.0.1 in /etc/resolv.conf).
+  # cat /etc/dnsmasq.d/caching
+  bind-interfaces
+  cache-size=500
+  listen-address=127.0.0.1
+  resolv-file=/etc/resolv.dnsmasq
+
+  # cp /etc/resolv.conf /etc/resolv.dnsmasq
+  # chattr +i /etc/resolv.conf
+
+  systemctl enable dnsmasq
+  systemctl start dnsmasq
 
 Example:
 
@@ -93,7 +103,7 @@ while [ $# -gt 0 ]; do
     --subnet) SUBNET="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
     --script) SCRIPT="$2" ; shift ;;
-    --install-deps) sudo yum -y install openssl virt-install libguestfs util-linux sudo libxml2 fortune ;;
+    --install-deps) sudo yum -y install openssl virt-install libguestfs libguestfs-tools util-linux sudo libxml2 fortune-mod; exit 0 ;;
     --no-sudo) SUDO='' ;;
     --force|-f) FORCE=1 ;;
     --help|-h) usage;  exit ;;
@@ -187,7 +197,7 @@ $SUDO virt-install --import \
   --cpu host \
   --os-variant rhel6 \
   --name $FQDN \
-  --ram 2500 \
+  --ram 3500 \
   --disk path=$IMAGE,format=raw,bus=virtio \
   --graphics spice \
   --noautoconsole \
