@@ -33,8 +33,8 @@ seshowif() {
 # regular expression
 sefinddef() {
   REGEXP="$1";
-  if test -d /usr/share/selinux/devel/include; then
-    pushd /usr/share/selinux/devel/include > /dev/null 2>&1;
+  if test -d /usr/share/selinux/devel/include/support; then
+    pushd /usr/share/selinux/devel/include/support > /dev/null 2>&1;
   else
     pushd ${POLICY_LOCATION}/policy/modules > /dev/null 2>&1;
   fi
@@ -48,8 +48,8 @@ sefinddef() {
 # seshowdef - Show the macro definition
 seshowdef() {
   MACRONAME="$1";
-  if test -d /usr/share/selinux/devel/include; then
-    pushd /usr/share/selinux/devel/include > /dev/null 2>&1;
+  if test -d /usr/share/selinux/devel/include/support; then
+    pushd /usr/share/selinux/devel/include/support > /dev/null 2>&1;
   else
     pushd ${POLICY_LOCATION}/policy/modules > /dev/null 2>&1;
   fi
