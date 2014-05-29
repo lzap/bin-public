@@ -27,6 +27,9 @@ OPTIONS:
         Do not use sudo for building and running VM - you will need to
         set --image-dir accordingly too when running under regular user.
 
+  --build-opts [options]
+        Addtional options for virt-builder (e.g. "--size 50G").
+
   --image-dir [path]
         Target images path
         Default: $IMAGEDIR
@@ -85,10 +88,11 @@ IMAGEDIR=/var/lib/libvirt/images
 SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
 FORCE=0
+BUILD_OPTS=""
 SUDO=sudo
 SCRIPT=fb-install-foreman.bats
 
-if ! options=$(getopt -o hfn:d: -l help,name:,distro:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet: -- "$@"); then
+if ! options=$(getopt -o hfn:d: -l help,name:,distro:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet: -- "$@"); then
   exit 1
 fi
 
@@ -101,6 +105,7 @@ while [ $# -gt 0 ]; do
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
     --subnet) SUBNET="$2" ; shift ;;
+    --build-opts) BUILD_OPTS="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
     --script) SCRIPT="$2" ; shift ;;
     --install-deps) sudo yum -y install openssl virt-install libguestfs libguestfs-tools util-linux sudo libxml2 fortune-mod; exit 0 ;;
@@ -190,6 +195,7 @@ $SUDO virt-builder $DISTRO \
   --hostname $FQDN \
   --run $TMP_SCRIPT \
   --firstboot $TMP_BOOTSCRIPT \
+  $BUILD_OPTS \
   || exit 2
 
 echo "Spawning new VM with MAC address $MAC"

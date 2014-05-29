@@ -25,7 +25,9 @@ git checkout develop 2>/dev/null || \
   git checkout master 2>/dev/null || \
   git checkout gh-pages 2>/dev/null
 PARENT=$(git rev-parse --abbrev-ref HEAD)
+blah "[*] FETCHING ALL BRANCHES"
 git fetch --all
+blah "[*] PULLING $PARENT"
 git pull
 blah "[*] CHECKING OUT USING HUB"
 hub checkout "$1" || git checkout "$1"
