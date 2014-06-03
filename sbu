@@ -30,7 +30,12 @@ SOURCEDIR0=$(echo "$SOURCE0" | sed -E 's/.tar.(gz|bz2)//g')
 [ ${DIST##.} = $DIST ] && DIST=.${DIST}
 
 # build SRPM
-if spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
+if test -x $(git rev-parse --show-toplevel)/.git/sbu-sources/$NAME; then
+  # building in git-annex based repository
+  echo "Working on $NAME via external script"
+  $(git rev-parse --show-toplevel)/.git/sbu-sources/$NAME
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+elif spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   echo "Working on $SPEC ($SOURCE0)"
   # sources are remote - download them first
   pushd $SRCDIR >/dev/null

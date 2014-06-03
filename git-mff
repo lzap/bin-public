@@ -38,11 +38,13 @@ trap "git branch -D '$BRANCH'" EXIT
 blah "[*] REBASE AND AMEND AND MERGE (IN BRANCH $BRANCH)"
 git checkout -B "$BRANCH" "$FROM" && \
   git rebase "$PARENT" && \
-  git commit --amend && \
   git diff "$PARENT..HEAD" --stat
 echo "Spawning interactive shell. Feel free to rebase, merge, cherry-pick"
 echo "and type 'exit' when done. The merging script will continue. You will"
 echo "still able to cancel it before pushing to remote."
+echo "The current HEAD is:"
+git log -1
 bash
 git diff "$PARENT..HEAD"
 git checkout "$PARENT" && git merge --ff-only "$BRANCH" && push_that "$PARENT"
+# TODO https://github.com/stephencelis/ghi CLOSE PR
