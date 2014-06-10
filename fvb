@@ -167,9 +167,6 @@ $SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostnam
 
 cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
-# debian/ubuntu image reconfiguration
-type dpkg && dpkg-reconfigure openssh-server
-
 $EXPORTS
 export HOME=/root
 cd \$HOME
@@ -184,11 +181,17 @@ $SCRIPT
 EOFBS
 
 cat <<EOFS > $TMP_SCRIPT
+# debian/ubuntu image reconfiguration
+type dpkg && dpkg-reconfigure openssh-server
+
+# ssh key deployment
 mkdir /root/.ssh
 echo $PUBLIC_KEY > /root/.ssh/authorized_keys
 chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
 type restorecon && restorecon -R /root
+
+# do not fail
 true
 EOFS
 
@@ -232,5 +235,5 @@ echo
 echo " ssh root@$FQDN"
 echo " https://$FQDN"
 echo
-type fortune >/dev/null && fortune
+type fortune &>/dev/null && fortune
 
