@@ -195,15 +195,16 @@ else
 fi
 
 echo "Building new image based on $DISTRO"
-$SUDO virt-builder $DISTRO \
+VIRT_BUILDER_CMD = $DISTRO \
   -o $IMAGE \
   --root-password password:redhat \
   --hostname $FQDN \
   --run $TMP_SCRIPT \
   --firstboot $TMP_BOOTSCRIPT \
   $ADDITIONAL_OPTS \
-  $BUILD_OPTS \
-  || exit 2
+  $BUILD_OPTS
+echo virt-builder options: $VIRT_BUILDER_CMD
+$SUDO virt-builder $VIRT_BUILDER_CMD || exit 2
 
 echo "Spawning new VM with MAC address $MAC"
 $SUDO virt-install --import \
