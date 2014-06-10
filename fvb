@@ -132,8 +132,8 @@ done
 FQDN=${NAME}.${DOMAIN}
 IMAGE=${IMAGEDIR}/$FQDN.img
 MAC="52:54:01$(echo "$(hostname)${FQDN}" | openssl dgst -md5 -binary | hexdump -e '/1 ":%02x"' -n 3)"
-TMP_BOOTSCRIPT=$(mktemp)
-TMP_SCRIPT=$(mktemp)
+TMP_BOOTSCRIPT=$(mktemp virt-builder-boot-script-XXXXXXXXXX)
+TMP_SCRIPT=$(mktemp virt-builder-build-script-XXXXXXXXXX)
 trap "rm -f $TMP_BOOTSCRIPT $TMP_SCRIPT" EXIT
 
 if [[ FORCE -eq 0 ]]; then
@@ -171,7 +171,7 @@ $EXPORTS
 export HOME=/root
 cd \$HOME
 set -x
-type git || yum -y install git || apt-get -y install git
+type git || yum -y install git || (apt-get update && apt-get -y install git)
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
 git clone https://github.com/$BATS_REPOOWNER/foreman-bats.git -b $BATS_BRANCH && foreman-bats/install.sh /usr/local
 git clone https://github.com/lzap/bin-public.git
