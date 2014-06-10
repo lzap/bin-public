@@ -167,6 +167,9 @@ $SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostnam
 
 cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
+# debian/ubuntu image reconfiguration
+type dpkg && dpkg-reconfigure openssh-server
+
 $EXPORTS
 export HOME=/root
 cd \$HOME
@@ -188,12 +191,6 @@ chmod 600 /root/.ssh/authorized_keys
 type restorecon && restorecon -R /root
 EOFS
 
-if [[ "$DISTRO" == "debian-"* || "$DISTRO" == "ubuntu-"* ]]; then
-  ADDITIONAL_OPTS='--firstboot-command "dpkg-reconfigure openssh-server"'
-else
-  ADDITIONAL_OPTS=''
-fi
-
 echo "Building new image based on $DISTRO"
 $SUDO virt-builder $DISTRO \
   -o $IMAGE \
@@ -201,7 +198,6 @@ $SUDO virt-builder $DISTRO \
   --hostname $FQDN \
   --run $TMP_SCRIPT \
   --firstboot $TMP_BOOTSCRIPT \
-  $ADDITIONAL_OPTS \
   $BUILD_OPTS \
   || exit 2
 
