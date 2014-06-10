@@ -201,7 +201,7 @@ $SUDO virt-builder $DISTRO \
   --hostname $FQDN \
   --run $TMP_SCRIPT \
   --firstboot $TMP_BOOTSCRIPT \
-  $ADDITIONAL_OPTS
+  $ADDITIONAL_OPTS \
   $BUILD_OPTS \
   || exit 2
 
