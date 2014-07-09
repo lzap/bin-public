@@ -69,10 +69,11 @@ else
 fi
 
 # submit the build
+echo "Source RPM is $SRPM"
 if [ "$TARGET" == "katello" -o "$TARGET" == "koji" ]; then
-  koji -c ~/.koji/katello-config build --scratch --wait $KOJI_TAG "$SRPM"
+  kojikat build --scratch --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "katello-release" -o "$TARGET" == "koji-release" ]; then
-  koji -c ~/.koji/katello-config build --wait $KOJI_TAG "$SRPM"
+  kojikat build --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora" ]; then
   koji build --scratch --wait $KOJI_TAG "$SRPM"
 elif [ "$TARGET" == "fedora-release" ]; then
@@ -83,7 +84,7 @@ elif [ "$TARGET" == "mock" ]; then
   mock "$SRPM"
 else
   # local build on a hostname
-  echo "Copying $SRPM to $TARGET"
+  echo "Copying the source rpm to $TARGET"
   scp "$SRPM" "$TARGET:"
   SRPM_FILE=$(basename $SRPM)
   ssh -C "$TARGET" <<EOF
