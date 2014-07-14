@@ -16,8 +16,11 @@ SRCDIR=$(rpm --eval '%{_sourcedir}')
 
 if [[ "$DIST" == "el6" && $NONSCL -ne 1 ]]; then
   EXTRA_DEFINE="scl ruby193"
+  # yum-builddep does not work with SCL, as a workaround we install ruby193- packages
+  EXTRA_SSH_COMMANDS="yum -y install ruby193-build scl-utils-build ruby193-*"
 else
   EXTRA_DEFINE="__nothing 1"
+  EXTRA_SSH_COMMANDS=""
 fi
 
 SPEC=$(ls *.spec | head -n1)
@@ -92,7 +95,10 @@ else
   echo Building $SRPM_FILE in \$RPMBUILD
   if [ -f "$SRPM_FILE" ]; then
     # install build essentials
-    type -P gcc >/dev/null || yum groupinstall "Development Tools"
+    type -P gcc >/dev/null || yes | yum groupinstall "Development Tools"
+
+    # install SCL on el6
+    $EXTRA_SSH_COMMANDS
 
     # prepare and clean whole rpmbuild dir
     [ -d /usr/src/redhat/RPMS ] && RPMBUILD=/usr/src/redhat
@@ -100,7 +106,7 @@ else
     rm -rf \$RPMBUILD/*/*
 
     # install build deps and build (NOT using mock)
-    echo "y" | yum-builddep "$SRPM_FILE"
+    yes | yum-builddep "$SRPM_FILE"
     rpmbuild --rmsource --rmspec --rebuild "$SRPM_FILE" $2 $3 $4
 
     # remove headpin (we are testing only against katello)
@@ -109,9 +115,6 @@ else
     # if fedora-review is enabled, do it now
     #type -P fedora-review >/dev/null || yum -y install fedora-review
     #fedora-review -n "$NAME" -r -p
-
-    # TODO if RHEL6 then
-    #yum -y install ruby193-build scl-utils-build
 
     # install packages and if that fails try to --force it
     echo INSTALLING:
