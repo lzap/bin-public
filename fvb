@@ -170,7 +170,7 @@ cat <<EOFBS > $TMP_BOOTSCRIPT
 $EXPORTS
 export HOME=/root
 cd \$HOME
-ping -c1 -w30 8.8.8.8
+while ! ping -c1 -w5 8.8.8.8 &>/dev/null; do echo Waiting for network...; done
 set -x
 type git || yum -y install git || (apt-get update && apt-get -y install git)
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
