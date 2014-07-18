@@ -92,7 +92,7 @@ BUILD_OPTS=""
 SUDO=sudo
 SCRIPT=fb-install-foreman.bats
 
-if ! options=$(getopt -o hfn:d: -l help,name:,distro:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet: -- "$@"); then
+if ! options=$(getopt -o hfn:d: -l help,name:,distro:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
   exit 1
 fi
 
