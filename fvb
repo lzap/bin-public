@@ -190,7 +190,7 @@ mkdir /root/.ssh
 echo $PUBLIC_KEY > /root/.ssh/authorized_keys
 chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
-type restorecon && restorecon -R /root
+type restorecon && restorecon -RvvF /root/.ssh
 
 # do not fail
 true
