@@ -120,12 +120,13 @@ while [ $# -gt 0 ]; do
 done
 
 echo "Parsing extra arguments"
-EXPORTS=""
+EXPORTS=()
 BATS_REPOOWNER="theforeman"
 BATS_BRANCH="master"
 while [ $# -gt 0 ]; do
   echo "$1"; eval "$1"
-  EXPORTS+="export $1"
+  # TODO toto nefunguje appenduje to bez \n
+  EXPORTS+=("export $1")
   shift
 done
 
@@ -167,11 +168,11 @@ $SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostnam
 
 cat <<EOFBS > $TMP_BOOTSCRIPT
 #!/bin/sh
-$EXPORTS
+$(for ix in ${!EXPORTS[*]}; do printf "%s\n" "${EXPORTS[$ix]}"; done)
 export HOME=/root
 cd \$HOME
 type restorecon && restorecon -RvvF .ssh
-while ! ping -c1 -w5 8.8.8.8 &>/dev/null; do echo Waiting for network...; done
+while ! ping -c1 -w10 8.8.8.8 &>/dev/null; do true; done
 set -x
 type git || yum -y install git || (apt-get update && apt-get -y install git)
 git clone https://github.com/sstephenson/bats.git && bats/install.sh /usr/local
