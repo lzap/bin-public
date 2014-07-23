@@ -10,6 +10,10 @@ configuration and sends SIGHUP to refresh so the hostname is instantly
 available. The root password is "redhat" but you should have your public
 ssh key installed by default.
 
+Before you start, install required dependencies:
+
+  $0 --install-deps
+
 OPTIONS:
   --help | -h
         Show this message
@@ -29,6 +33,8 @@ OPTIONS:
 
   --build-opts [options]
         Addtional options for virt-builder (e.g. "--size 50G").
+        You can only provide this option once, enquote if you need more
+        options.
 
   --image-dir [path]
         Target images path
@@ -74,7 +80,7 @@ Example:
 
   fvb -n my-nightly-foreman -f
   fvb -n rc-foreman -- "FOREMAN_REPO=rc" "MYVAR=value"
-  fvb -n stable-foreman -- "FOREMAN_REPO=releases/1.4"
+  fvb -n stable-foreman -- "FOREMAN_REPO=releases/1.5"
   fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
   fvb -n my-own-script --script fb-xyz.bats -- BATS_REPOOWNER=lzap BATS_BRANCH=test
 
