@@ -101,7 +101,7 @@ SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
 FORCE=0
 RAM=3200
-SIZE=5G
+SIZE=6G
 BUILD_OPTS=""
 SUDO=sudo
 SCRIPT=fb-install-foreman.bats
@@ -176,8 +176,11 @@ virsh_dns=$($netdump | xmllint --xpath "/network/dns/host/hostname[text()='$FQDN
 $SUDO virsh net-update default delete ip-dhcp-host --xml "$virsh_dhcp" --live --config 2>/dev/null
 $SUDO virsh net-update default delete dns-host --xml "$virsh_dns" --live --config 2>/dev/null
 
-RANDOMIP=$(( ( RANDOM % 250 )  + 2 ))
-AIP="${SUBNET}.${RANDOMIP}"
+while ! netdump | xmllint --xpath "/network/ip/dhcp/host[@ip='$AIP']" - 2>/dev/null; do
+  RANDOMIP=$(( ( RANDOM % 250 )  + 2 ))
+  AIP="${SUBNET}.${RANDOMIP}"
+  echo "Checking if random IP is not in use"
+done
 echo "Deploying DHCP/DNS configuration via libvirt for $AIP"
 $SUDO virsh net-update default add-last ip-dhcp-host --xml "<host mac='$MAC' name='$FQDN' ip='$AIP'/>" --live --config
 $SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostname>$FQDN</hostname></host>"  --live --config
