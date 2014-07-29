@@ -176,7 +176,7 @@ virsh_dns=$($netdump | xmllint --xpath "/network/dns/host/hostname[text()='$FQDN
 $SUDO virsh net-update default delete ip-dhcp-host --xml "$virsh_dhcp" --live --config 2>/dev/null
 $SUDO virsh net-update default delete dns-host --xml "$virsh_dns" --live --config 2>/dev/null
 
-while ! netdump | xmllint --xpath "/network/ip/dhcp/host[@ip='$AIP']" - 2>/dev/null; do
+while ! $netdump | xmllint --xpath "/network/ip/dhcp/host[@ip='$AIP']" - 2>/dev/null; do
   RANDOMIP=$(( ( RANDOM % 250 )  + 2 ))
   AIP="${SUBNET}.${RANDOMIP}"
   echo "Checking if random IP is not in use"
