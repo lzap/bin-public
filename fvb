@@ -27,6 +27,9 @@ OPTIONS:
   --ram | -r
         Amount of memory for the VM in kbytes, default: $RAM
 
+  --disk | -k
+        Size of the image, default $SIZE
+
   --force | -f
         Overwrite target image and VM if they exist
 
@@ -98,11 +101,12 @@ SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
 FORCE=0
 RAM=3200
+SIZE=5G
 BUILD_OPTS=""
 SUDO=sudo
 SCRIPT=fb-install-foreman.bats
 
-if ! options=$(getopt -o hfn:d:r: -l help,name:,distro:,ram:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
+if ! options=$(getopt -o hfn:d:r:k: -l help,name:,distro:,ram:,disk:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
   exit 1
 fi
 
@@ -115,6 +119,7 @@ while [ $# -gt 0 ]; do
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
     --ram|-r) RAM="$2" ; shift ;;
+    --size|-k) SIZE="$2" ; shift ;;
     --subnet) SUBNET="$2" ; shift ;;
     --build-opts) BUILD_OPTS="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
@@ -213,6 +218,7 @@ $SUDO virt-builder $DISTRO \
   --hostname $FQDN \
   --run $TMP_SCRIPT \
   --firstboot $TMP_BOOTSCRIPT \
+  --size $SIZE \
   $BUILD_OPTS \
   || exit 2
 
