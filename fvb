@@ -119,7 +119,7 @@ while [ $# -gt 0 ]; do
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
     --ram|-r) RAM="$2" ; shift ;;
-    --size|-k) SIZE="$2" ; shift ;;
+    --disk|-k) SIZE="$2" ; shift ;;
     --subnet) SUBNET="$2" ; shift ;;
     --build-opts) BUILD_OPTS="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
