@@ -24,6 +24,9 @@ OPTIONS:
   --distro | -d
         Distribution base image for virt-builder, default: $DISTRO
 
+  --ram | -r
+        Amount of memory for the VM in kbytes, default: $RAM
+
   --force | -f
         Overwrite target image and VM if they exist
 
@@ -94,11 +97,12 @@ IMAGEDIR=/var/lib/libvirt/images
 SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
 FORCE=0
+RAM=3200
 BUILD_OPTS=""
 SUDO=sudo
 SCRIPT=fb-install-foreman.bats
 
-if ! options=$(getopt -o hfn:d: -l help,name:,distro:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
+if ! options=$(getopt -o hfn:d:r: -l help,name:,distro:,ram:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
   exit 1
 fi
 
@@ -110,6 +114,7 @@ while [ $# -gt 0 ]; do
     --distro|-d) DISTRO="$2" ; shift ;;
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
+    --ram|-r) RAM="$2" ; shift ;;
     --subnet) SUBNET="$2" ; shift ;;
     --build-opts) BUILD_OPTS="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
@@ -216,7 +221,7 @@ $SUDO virt-install --import \
   --cpu host \
   --os-variant rhel6 \
   --name $FQDN \
-  --ram 3500 \
+  --ram $RAM \
   --disk path=$IMAGE,format=raw,bus=virtio \
   --graphics spice \
   --noautoconsole \
