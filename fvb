@@ -176,11 +176,12 @@ virsh_dns=$($netdump | xmllint --xpath "/network/dns/host/hostname[text()='$FQDN
 $SUDO virsh net-update default delete ip-dhcp-host --xml "$virsh_dhcp" --live --config 2>/dev/null
 $SUDO virsh net-update default delete dns-host --xml "$virsh_dns" --live --config 2>/dev/null
 
-while $netdump | xmllint --xpath "/network/ip/dhcp/host[@ip='$AIP']" - &>/dev/null; do
-  RANDOMIP=$(( ( RANDOM % 250 )  + 2 ))
-  AIP="${SUBNET}.${RANDOMIP}"
+while true; do
+  AIP="${SUBNET}.$(( ( RANDOM % 250 )  + 2 ))"
   echo "Checking if random IP $AIP is not in use"
+  $netdump | xmllint --xpath "/network/ip/dhcp/host[@ip='$AIP']" - &>/dev/null || break
 done
+
 echo "Deploying DHCP/DNS configuration via libvirt for $AIP"
 $SUDO virsh net-update default add-last ip-dhcp-host --xml "<host mac='$MAC' name='$FQDN' ip='$AIP'/>" --live --config
 $SUDO virsh net-update default add-last dns-host --xml "<host ip='$AIP'><hostname>$FQDN</hostname></host>"  --live --config
