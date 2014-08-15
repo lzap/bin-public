@@ -203,7 +203,7 @@ git clone https://github.com/$BATS_REPOOWNER/foreman-bats.git -b $BATS_BRANCH &&
 git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats
-$(IFS=$'\n'; echo "$SCRIPTS{[*]}")
+$(export IFS=$'\n'; echo ${SCRIPTS[*]})
 EOFBS
 
 cat <<EOFS > $TMP_SCRIPT
