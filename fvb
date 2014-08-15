@@ -107,7 +107,7 @@ RAM=3200
 SIZE=6G
 BUILD_OPTS=""
 SUDO=sudo
-SCRIPTS=(fb-install-foreman.bats)
+SCRIPTS=()
 
 if ! options=$(getopt -o hfn:d:r:k: -l help,name:,distro:,ram:,disk:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
   exit 1
@@ -148,6 +148,10 @@ while [ $# -gt 0 ]; do
   EXPORTS+=("export $1")
   shift
 done
+
+if [ ${SCRIPTS[@]} -eq 0 ]; then
+  SCRIPTS=(fb-install-foreman.bats)
+fi
 
 FQDN=${NAME}.${DOMAIN}
 IMAGE=${IMAGEDIR}/$FQDN.img
