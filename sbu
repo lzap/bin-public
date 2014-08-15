@@ -13,6 +13,8 @@ KOJI_TAG=${3:-foreman-nightly-rhel6}
 SCL=${4:-ruby193}
 SRCDIR=$(rpm --eval '%{_sourcedir}')
 
+echo "sbu $TARGET $DIST $KOJI_TAG $SCL"
+
 if [[ "$SCL" == "no" ]]; then
   echo "Building without SCL..."
   EXTRA_DEFINE="__nothing 1"
@@ -22,7 +24,7 @@ else
   EXTRA_DEFINE="__nothing 1"
   EXTRA_DEFINE="scl $SCL"
   # yum-builddep does not work with SCL, as a workaround we install ruby193- packages
-  EXTRA_SSH_COMMANDS="yum -y install $SCL-build scl-utils-build $SCL-*"
+  EXTRA_SSH_COMMANDS="yum -y install $SCL-build $SCL-scldevel scl-utils-build $SCL-*"
 fi
 
 SPEC=$(ls *.spec | head -n1)

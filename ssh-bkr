@@ -1,7 +1,10 @@
 #!/bin/bash
 TAG=${1:-FOREMAN_NIGHTLY_RHEL6}
-JOB=$(bkr job-list --mine -w "$TAG" --format list | sort | tail -n1)
-echo Job found: $JOB
-HOST=$(bkr job-results $JOB --prettyxml | grep -o '"[a-zA-Z0-9\.-]*.redhat.com"' | sed 's/"//g' | tail -n1)
-echo Host found: $HOST
-ssh $HOST
+JOBS=$(bkr job-list -w "$TAG" --format list | sort | tail -n5)
+for JOB in $JOBS; do
+  echo Trying job $JOB
+  HOST=$(bkr job-results $JOB --prettyxml | grep -o '"[a-zA-Z0-9\.-]*\.redhat\.com"' | sed 's/"//g' | tail -n1)
+  test -z "$HOST" && continue
+  echo Trying host: $HOST
+  ssh -o PasswordAuthentication=no $HOST || continue
+done

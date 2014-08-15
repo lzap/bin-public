@@ -4,6 +4,8 @@ usage() {
 cat <<USAGE
 usage: $0 options -- VARIABLE1=value1 ...
 
+TODO: libvirt-bats instead????
+
 Script for building images with Foreman preinstalled using virt-builder and
 bats suite on local libvirt host. The script also modifies dnsmasq
 configuration and sends SIGHUP to refresh so the hostname is instantly
@@ -59,6 +61,7 @@ OPTIONS:
 
   --script [name]
         BATS script to execute during first boot (can be any shell command)
+        Can specify multiple times for multiple commands (scripts)
         Default: $SCRIPT
 
   --install-deps
@@ -104,7 +107,7 @@ RAM=3200
 SIZE=6G
 BUILD_OPTS=""
 SUDO=sudo
-SCRIPT=fb-install-foreman.bats
+SCRIPTS=(fb-install-foreman.bats)
 
 if ! options=$(getopt -o hfn:d:r:k: -l help,name:,distro:,ram:,disk:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
   exit 1
@@ -123,7 +126,7 @@ while [ $# -gt 0 ]; do
     --subnet) SUBNET="$2" ; shift ;;
     --build-opts) BUILD_OPTS="$2" ; shift ;;
     --pub-key) PUBKEY="$2" ; shift ;;
-    --script) SCRIPT="$2" ; shift ;;
+    --script) SCRIPTS+=("$2") ; shift ;;
     --install-deps) sudo yum -y install openssl virt-install libguestfs libguestfs-tools util-linux sudo libxml2 fortune-mod; exit 0 ;;
     --no-sudo) SUDO='' ;;
     --force|-f) FORCE=1 ;;
@@ -200,7 +203,7 @@ git clone https://github.com/$BATS_REPOOWNER/foreman-bats.git -b $BATS_BRANCH &&
 git clone https://github.com/lzap/bin-public.git
 export PATH=/usr/local/bin:/root/bin-public:\$PATH
 [[ -n "\$KOJI_BUILD" ]] && fb-setup-koji.bats
-$SCRIPT
+$(IFS=$'\n'; echo "$SCRIPTS{[*]}")
 EOFBS
 
 cat <<EOFS > $TMP_SCRIPT
