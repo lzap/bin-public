@@ -71,6 +71,10 @@ else
   rm -rf `find -name ".git*"`
   tar c $SOURCEDIR0 | gzip -8 > ~/rpmbuild/SOURCES/$SOURCE0
   cd $SOURCEDIR0
+  # copy all the remaining sources
+  for f in $(spectool --list-files "$SPECDIR/$SPEC" | tail -n+2 | awk '{print $2}'); do
+    cp "$f" ~/rpmbuild/SOURCES
+  done
   SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" --define "$EXTRA_DEFINE" | tail -n1 | sed 's/^Wrote: //g')
   popd >/dev/null
 fi

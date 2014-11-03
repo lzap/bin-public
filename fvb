@@ -24,7 +24,11 @@ OPTIONS:
         Image name, default: $NAME
 
   --distro | -d
-        Distribution base image for virt-builder, default: $DISTRO
+        Distribution base image for virt-builder. default: $DISTRO
+
+  --os-variant | -t
+        OS variant for virt-install. To get the full list use
+        virt-install --os-variant=list command. Default: $DISTRO
 
   --ram | -r
         Amount of memory for the VM in kbytes, default: $RAM
@@ -99,6 +103,7 @@ USAGE
 NAME=nightly
 DOMAIN=local.lan
 DISTRO=centos-6
+OSVARIANT=rhel6
 IMAGEDIR=/var/lib/libvirt/images
 SUBNET='192.168.122'
 PUBKEY=$HOME/.ssh/id_rsa.pub
@@ -109,7 +114,7 @@ BUILD_OPTS=""
 SUDO=sudo
 SCRIPTS=()
 
-if ! options=$(getopt -o hfn:d:r:k: -l help,name:,distro:,ram:,disk:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,force -- "$@"); then
+if ! options=$(getopt -o hfn:d:r:k:t: -l help,name:,distro:,ram:,disk:,build-opts:,pub-key:,install-deps,image-dir:,domain:,script:,no-sudo,subnet:,os-variant:,force -- "$@"); then
   exit 1
 fi
 
@@ -119,6 +124,7 @@ while [ $# -gt 0 ]; do
     case $1 in
     --name|-n) NAME="$2" ; shift ;;
     --distro|-d) DISTRO="$2" ; shift ;;
+    --os-variant|-t) OSVARIANT="$2" ; shift ;;
     --image-dir|-p) IMAGEDIR="$2" ; shift ;;
     --domain) DOMAIN="$2" ; shift ;;
     --ram|-r) RAM="$2" ; shift ;;
@@ -149,7 +155,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ ${SCRIPTS[@]} -eq 0 ]; then
+if [ ${#SCRIPTS[@]} -eq 0 ]; then
   SCRIPTS=(fb-install-foreman.bats)
 fi
 
@@ -236,7 +242,7 @@ $SUDO virt-builder $DISTRO \
 echo "Spawning new VM with MAC address $MAC"
 $SUDO virt-install --import \
   --cpu host \
-  --os-variant rhel6 \
+  --os-variant $OSVARIANT \
   --name $FQDN \
   --ram $RAM \
   --disk path=$IMAGE,format=raw,bus=virtio \
@@ -264,4 +270,3 @@ echo " ssh root@$FQDN"
 echo " https://$FQDN"
 echo
 type fortune &>/dev/null && fortune
-
