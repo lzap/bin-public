@@ -1,10 +1,24 @@
 #!/bin/bash
-TAG=${1:-FOREMAN_NIGHTLY_RHEL6}
-JOBS=$(bkr job-list -w "$TAG" --format list | sort | tail -n5)
+# yum -y install libxml2 yad
+MAX=${1:-15}
+echo "Fetching latest beaker results..."
+JOBS=$(bkr job-list --mine --format list | sort -r | tail -n $MAX)
+TMP=/tmp/ssh-bkr
+mkdir -p $TMP 2>/dev/null
+SYSTEMS=()
 for JOB in $JOBS; do
-  echo Trying job $JOB
-  HOST=$(bkr job-results $JOB --prettyxml | grep -o '"[a-zA-Z0-9\.-]*\.redhat\.com"' | sed 's/"//g' | tail -n1)
-  test -z "$HOST" && continue
-  echo Trying host: $HOST
-  ssh -o PasswordAuthentication=no $HOST || continue
+  JXML=$TMP/$JOB.xml
+  [ -f $JXML ] || bkr job-results $JOB --prettyxml > $JXML
+  R="'$(xmllint --xpath 'string(//job/recipeSet/recipe/@system)' $JXML)'"
+  R+=" '$(xmllint --xpath '//job/whiteboard/text()' $JXML)'"
+  R+=" '$(xmllint --xpath 'string(//job/@result)' $JXML)'"
+  R+=" '$(xmllint --xpath 'string(//job/@status)' $JXML)'"
+  SYSTEMS+=($R)
 done
+
+HOST=$(eval yad --list --column Hostname --column Whiteboard --column Status --column Result ${SYSTEMS[@]} | awk -F\| '{print $1}')
+
+if [ ! -z "$HOST" ]; then
+  echo "Connecting to $HOST..."
+  ssh -o PasswordAuthentication=no root@$HOST
+fi
