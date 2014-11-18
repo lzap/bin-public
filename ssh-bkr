@@ -1,13 +1,13 @@
 #!/bin/bash
 # yum -y install libxml2 yad
 MAX=${1:-15}
-echo "Fetching latest beaker results..."
+echo "Fetching latest beaker results ..."
 JOBS=$(bkr job-list --mine --format list | sort | tail -n $MAX)
 TMP=/tmp/ssh-bkr
 mkdir -p $TMP 2>/dev/null
 SYSTEMS=()
 for JOB in $JOBS; do
-  echo "Parsing $JOB..."
+  echo "Parsing $JOB ..."
   JXML=$TMP/$JOB.xml
   [ -f $JXML ] || bkr job-results $JOB --prettyxml > $JXML
   R="'$(xmllint --xpath 'string(//job/recipeSet/recipe/@system)' $JXML)'"
@@ -20,6 +20,6 @@ done
 HOST=$(eval yad --list --column Hostname --column Whiteboard --column Status --column Result ${SYSTEMS[@]} | awk -F\| '{print $1}')
 
 if [ ! -z "$HOST" ]; then
-  echo "Connecting to $HOST..."
+  echo "Connecting to $HOST ..."
   ssh -o PasswordAuthentication=no root@$HOST
 fi
