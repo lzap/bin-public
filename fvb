@@ -4,13 +4,17 @@ usage() {
 cat <<USAGE
 usage: $0 options -- VARIABLE1=value1 ...
 
-TODO: libvirt-bats instead????
+Wrapper around virt-builder and virt-install with dnsmasq support.
 
-Script for building images with Foreman preinstalled using virt-builder and
-bats suite on local libvirt host. The script also modifies dnsmasq
-configuration and sends SIGHUP to refresh so the hostname is instantly
-available. The root password is "redhat" but you should have your public
-ssh key installed by default.
+This script helps with spawning VMs by calling virt-builder and virt-install
+tools with proper parameters and also modifying dnsmasq configuration to setup
+hostnames properly sending SIGHUP to dnsmasq to refresh.
+
+All VMs created by this tool has root password set to "redhat" but your public
+key is also automatically deployed into the VM.
+
+The script is best to use with BATS testing suite for running installation and
+integration tests. It was developed for The Foreman open-source project.
 
 Before you start, install required dependencies:
 
@@ -71,10 +75,11 @@ OPTIONS:
   --install-deps
         Install required dependencies
 
-To have this integrated with local dnsmasq (and libvirt), put the following
-in dnsmasq configuration:
+Integration with dnsmasq is optional, but if you want to take advantage of it,
+configure your local dnsmasq to be your caching DNS server with exception for
+locally provisioned VMs:
 
-  # cat /etc/dnsmasq.d/local.lan
+  # cat /etc/dnsmasq.d/virt-spawn
   addn-hosts=/var/lib/libvirt/dnsmasq/default.addnhosts
 
   # cat /etc/dnsmasq.d/caching
@@ -91,11 +96,11 @@ in dnsmasq configuration:
 
 Example:
 
-  fvb -n my-nightly-foreman -f
-  fvb -n rc-foreman -- "FOREMAN_REPO=rc" "MYVAR=value"
-  fvb -n stable-foreman -- "FOREMAN_REPO=releases/1.5"
-  fvb -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
-  fvb -n my-own-script --script fb-xyz.bats -- BATS_REPOOWNER=lzap BATS_BRANCH=test
+  virt-spawn -n my-nightly-foreman -f
+  virt-spawn -n rc-foreman -- "FOREMAN_REPO=rc" "MYVAR=value"
+  virt-spawn -n stable-foreman -- "FOREMAN_REPO=releases/1.5"
+  virt-spawn -n bz981123 -- "KOJI_BUILD=http://mykoji.blah/taskinfo?taskID=97281"
+  virt-spawn -n my-own-script --script fb-xyz.bats -- BATS_REPOOWNER=lzap BATS_BRANCH=test
 
 USAGE
 }
@@ -267,6 +272,7 @@ echo "Done! Your guest networking should be up and running soon."
 echo "Login and watch virt-sysprep-firstboot.log for progress."
 echo
 echo " ssh root@$FQDN"
+echo " http://$FQDN"
 echo " https://$FQDN"
 echo
 type fortune &>/dev/null && fortune
