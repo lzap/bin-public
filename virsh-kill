@@ -2,8 +2,8 @@
 
 [ -z "$1" ] && echo "Usage: $0 domain" && exit 1
 
+sudo virsh dumpxml "$1" | xmllint --xpath 'string(//domain/devices/disk/source/@file)' - | xargs rm -fv
 sudo virsh destroy "$1"
 sudo virsh undefine "$1"
-rm -fv /mnt/data/images/$1-disk1
 
 sudo virsh list --all
