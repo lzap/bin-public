@@ -15,8 +15,10 @@ cat <<EOD > $TMP_DATA
     "ipaddress": "$IP",
     "ipaddress_$DEVICE": "$IP",
     "interfaces": "$DEVICE",
-    "processorcount": "8",
-    "memorysize_mb": "900"
+    "physicalprocessorcount": "3",
+    "memorysize_mb": "900",
+    "blockdevice.sda_size": "1234567890",
+    "blockdevice.sdb_size": "123456700"
   }
 }
 EOD
