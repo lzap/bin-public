@@ -26,3 +26,4 @@ cat $TMP_DATA
 curl -iku "$CREDENTIALS" \
   -H "Content-Type: application/json" \
   -d @$TMP_DATA -X POST $URL/api/v2/discovered_hosts/facts
+echo -e "\n"
