@@ -1,0 +1,26 @@
+#!/bin/bash
+URL=${1:-http://localhost:3000}
+CREDENTIALS=${2:-admin:admin}
+MAC=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
+MAC=${3:-$MAC}
+IP="192.168.122.$(($RANDOM % 253 + 1))"
+DEVICE=eth0
+TMP_DATA=$(mktemp /tmp/discover-host-XXXXXXXXXX)
+trap "rm -f $TMP_DATA" EXIT
+cat <<EOD > $TMP_DATA
+{
+  "facts": {
+    "discovery_bootif": "$MAC",
+    "macaddress_$DEVICE": "$MAC",
+    "ipaddress": "$IP",
+    "ipaddress_$DEVICE": "$IP",
+    "interfaces": "$DEVICE",
+    "processorcount": "8",
+    "memorysize_mb": "900"
+  }
+}
+EOD
+cat $TMP_DATA
+curl -iku "$CREDENTIALS" \
+  -H "Content-Type: application/json" \
+  -d @$TMP_DATA -X POST $URL/api/v2/discovered_hosts/facts

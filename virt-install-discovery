@@ -7,6 +7,9 @@ if [[ "$1" != "off" ]]; then
   sudo virt-install --os-variant rhel7 --vcpus 1 --ram 500 \
     --name $NAME --nodisk --boot network \
     --graphics spice,listen=0.0.0.0 --noautoconsole &
+fi
+
+if [[ "$1" == "view" ]]; then
   sleep 4
   virt-viewer -c qemu:///system $NAME &>/dev/null &
 fi
