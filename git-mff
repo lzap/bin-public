@@ -1,9 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 # Rebase & Merge & Push a remote branch using hub/git
+[[ "$1" == "" ]] && echo "Usage: $0 pr_url" && exit 1
+type hub >/dev/null || (echo "Hub tool is not installed, cannot continue!" && exit 2)
 
-[[ "$1" == "" ]] && echo "Usage: $0 remote/branch" && exit 1
-#set -x
+HUB_TOKEN=$(grep oauth_token ~/.config/hub | awk '{print $2}')
+OWNER_REPO=$(echo "$1" | awk -F/ '{print $4 "/" $5}')
+PRNUMBER=$(echo "$1" | awk -F/ '{print $7}')
 
 blah() {
   echo -e "\e[1m$1\e[0m"
@@ -18,6 +21,18 @@ push_that() {
   blah "[*] DRY-PUSHING"
   git push -n
   blah "[*] PUSH NOW FOR REAL [ENTER]?" && read && git push
+  if [ "$?" == "0" ]; then
+    LASTCOMMIT=$(git log | head -1 | cut -d ' ' -f2)
+    curl --silent -X POST \
+      -H "Content-Type: application/vnd.github.VERSION.raw+json" \
+      -H "Authorization: token $HUB_TOKEN" \
+      -d '{ "body" : "Merged as '"$LASTCOMMIT"', thank you!" }' "https://api.github.com/repos/$OWNER_REPO/issues/$PRNUMBER/comments"
+
+    curl --silent -X PATCH \
+      -H "Content-Type: application/vnd.github.VERSION.raw+json" \
+      -H "Authorization: token $HUB_TOKEN" \
+      -d '{ "state" : "closed" }' "https://api.github.com/repos/$OWNER_REPO/pulls/$PRNUMBER" > /dev/null
+  fi
 }
 
 blah "[*] UPDATING"
@@ -25,8 +40,6 @@ git checkout develop 2>/dev/null || \
   git checkout master 2>/dev/null || \
   git checkout gh-pages 2>/dev/null
 PARENT=$(git rev-parse --abbrev-ref HEAD)
-#blah "[*] FETCHING ALL BRANCHES"
-#git fetch -p --all
 blah "[*] PULLING $PARENT"
 git pull
 blah "[*] CHECKING OUT USING HUB"

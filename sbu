@@ -41,7 +41,7 @@ if test -x $(git rev-parse --show-toplevel)/.git/sbu-sources/$NAME; then
   # building in git-annex based repository
   echo "Working on $NAME via external script"
   $(git rev-parse --show-toplevel)/.git/sbu-sources/$NAME
-  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" --define "$EXTRA_DEFINE" | tail -n1 | sed 's/^Wrote: //g')
 elif spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
   echo "Working on $SPEC ($SOURCE0)"
   # sources are remote - download them first
@@ -55,7 +55,7 @@ elif spectool --list-files "$SPEC" | awk '{print $2}' | grep '^http'; then
     fi
   done | xargs -n 1 -P 4 wget -c -N --no-check-certificate ${VERBOSE:=-q}
   popd >/dev/null
-  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" | tail -n1 | sed 's/^Wrote: //g')
+  SRPM=$(rpmbuild -bs $NAME.spec --define "dist $DIST" --define "$EXTRA_DEFINE" | tail -n1 | sed 's/^Wrote: //g')
 else
   echo "Working on $SPEC ($SOURCE0/$SOURCEDIR0)"
   # sources are most likely part of the git repo
@@ -128,8 +128,8 @@ else
     echo INSTALLING:
     ls \$RPMBUILD/*/*/*rpm
     # TODO - yum returns 0 on 'does not update installed package' error
-    yum localinstall -y --nogpgcheck \$RPMBUILD/*/*/*rpm
-    rpm -Uvh --oldpackage --force \$RPMBUILD/*/*/*rpm 2>&1
+    #yum localinstall -y --nogpgcheck \$RPMBUILD/*/*/*rpm
+    #rpm -Uvh --oldpackage --force \$RPMBUILD/*/*/*rpm 2>&1
     echo DONE
   fi
 EOF
