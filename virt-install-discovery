@@ -4,7 +4,7 @@ sudo virsh destroy $NAME
 sudo virsh undefine $NAME
 
 if [[ "$1" != "off" ]]; then
-  sudo virt-install --os-variant rhel7 --vcpus 1 --ram 500 \
+  sudo virt-install --os-variant rhel7 --vcpus 1 --ram 1900 \
     --name $NAME --nodisk --boot network \
     --graphics spice,listen=0.0.0.0 --noautoconsole &
 fi
