@@ -1,20 +1,40 @@
 #!/bin/bash
 URL=${1:-http://localhost:3000}
 CREDENTIALS=${2:-admin:admin}
-MAC=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
-MAC=${3:-$MAC}
-IP="192.168.122.$(($RANDOM % 253 + 1))"
-DEVICE=eth0
+MAC1=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
+MAC2=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
+MAC3=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
+MACBMC=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
+IP1="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
+IP2="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
+IP3="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
+IPBMC="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
 TMP_DATA=$(mktemp /tmp/discover-host-XXXXXXXXXX)
 trap "rm -f $TMP_DATA" EXIT
 cat <<EOD > $TMP_DATA
 {
   "facts": {
-    "discovery_bootif": "$MAC",
-    "macaddress_$DEVICE": "$MAC",
-    "ipaddress": "$IP",
-    "ipaddress_$DEVICE": "$IP",
-    "interfaces": "$DEVICE",
+    "interfaces": "fake1,fake2,fake3",
+    "macaddress_fake1": "$MAC1",
+    "macaddress_fake2": "$MAC2",
+    "macaddress_fake3": "$MAC3",
+    "ipaddress_fake1": "$IP1",
+    "ipaddress_fake2": "$IP2",
+    "ipaddress_fake3": "$IP3",
+    "macaddress": "$MAC3",
+    "ipaddress": "$IP3",
+    "discovery_bootif": "$MAC2",
+    "ipmi_enabled": "true",
+    "ipmi_1_gateway": "10.1.1.1",
+    "ipmi_1_ipaddress": "$IPBMC",
+    "ipmi_1_ipaddress_source": "DHCP Address",
+    "ipmi_1_macaddress": "$MACBMC",
+    "ipmi_1_subnet_mask": "255.0.0.0",
+    "ipmi_gateway": "10.1.1.1",
+    "ipmi_ipaddress": "$IPBMC",
+    "ipmi_ipaddress_source": "DHCP Address",
+    "ipmi_macaddress": "$MACBMC",
+    "ipmi_subnet_mask": "255.0.0.0",
     "physicalprocessorcount": "3",
     "memorysize_mb": "900",
     "blockdevice.sda_size": "1234567890",
