@@ -6,6 +6,10 @@ sudo virsh undefine $NAME
 if [[ "$1" != "off" ]]; then
   sudo virt-install --os-variant rhel7 --vcpus 1 --ram 1900 \
     --name $NAME --nodisk --boot network \
+    -w network=default,model=virtio,mac=52:54:00:13:05:13 \
+    -w network=dummy,model=rtl8139 \
+    -w network=dummy,model=e1000 \
+    -w network=dummy,model=e1000 \
     --graphics spice,listen=0.0.0.0 --noautoconsole &
 fi
 
