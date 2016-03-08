@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+require "rbovirt"
+require "socket"
+
+def ca_cert(url)
+  parsed_url = URI.parse url
+  begin
+    tcp_socket = TCPSocket.open parsed_url.host, parsed_url.port
+    ssl_socket = OpenSSL::SSL::SSLSocket.new tcp_socket
+    ssl_socket.connect
+    ssl_socket.peer_cert_chain.last.to_pem
+  ensure
+    unless ssl_socket.nil?
+      ssl_socket.close
+    end
+    unless tcp_socket.nil?
+      tcp_socket.close
+    end
+  end
+end
+
+url = "https://ibm-x3650-03.ovirt.rhts.eng.bos.redhat.com/api"
+user = "admin@internal"
+password = "ovirt"
+datacenter = "local_datacenter"
+cluster = "local_cluster"
+network = "ovirtmgmt"
+cert = ca_cert(url)
+store = OpenSSL::X509::Store.new().add_cert(OpenSSL::X509::Certificate.new(cert))
+opts = { :ca_cert_store => store }
+client = ::OVIRT::Client.new(user, password, url, opts)
+datacenter_id = client.datacenters.find{|x| x.name == datacenter}.id rescue raise("Cannot find datacenter #{datacenter}")
+opts.merge!(:datacenter_id => datacenter_id)
+client = ::OVIRT::Client.new(user, password, url, opts)
+cluster = client.clusters.select{|c| c.name == cluster}.first.id
+template_id = "00000000-0000-0000-0000-000000000000"
+(0..500).each do |_|
+  name = "vm-#{rand(99999)}-#{Time.now.to_i.to_s}"
+  vm = client.create_vm(:name => name, :template => template_id, :cluster => cluster)
+  client.add_volume(vm.id)
+  client.add_interface(vm.id, :network_name => network)
+  puts "Created #{name}"
+end

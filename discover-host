@@ -12,6 +12,7 @@ IP2="192.168.122.$(($RANDOM % 250 + 1))"
 IP3="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
 IPBMC="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
 TMP_DATA=$(mktemp /tmp/discover-host-XXXXXXXXXX)
+IP1="192.168.122.37"
 trap "rm -f $TMP_DATA" EXIT
 cat <<EOD > $TMP_DATA
 {
@@ -40,7 +41,10 @@ cat <<EOD > $TMP_DATA
     "physicalprocessorcount": "3",
     "memorysize_mb": "900",
     "blockdevice.sda_size": "1234567890",
-    "blockdevice.sdb_size": "123456700"
+    "blockdevice.sdb_size": "123456700",
+    "xxx-foreman_organization": "TestOrg1",
+    "xxx-foreman_location": "Olomouc",
+    "a": "b"
   }
 }
 EOD

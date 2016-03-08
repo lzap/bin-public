@@ -16,10 +16,11 @@ if ! git push --set-upstream $REMOTE $BRANCH; then
 else
   # remote branch was new - offer creating a pull-request
   git branch
-  read -p "Open a pull-request (d - develop; m = master; g = gh-pages; r = rpm/develop; other key skips) ?" response
+  read -p "Open PR (d - develop; m = master; g = gh-pages; r = rpm/develop; u = deb/develop)?" response
   case $response in
     [Mm]* ) hub pull-request $*;;
     [Rr]* ) hub pull-request -b rpm/develop $*;;
+    [Uu]* ) hub pull-request -b deb/develop $*;;
     [Dd]* ) hub pull-request -b develop $*;;
     [Gg]* ) hub pull-request -b gh-pages $*;;
     * ) echo "Not creating pull-request";;

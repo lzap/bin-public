@@ -2,14 +2,14 @@
 # yum -y install libxml2 yad
 MAX=${1:-15}
 echo "Fetching latest beaker results ..."
-JOBS=$(bkr job-list --mine --format list | sort | tail -n $MAX)
+JOBS=$(bkr job-list --mine --format list | cut -d: -f2 | sort -n | tail -n $MAX)
 TMP=/tmp/ssh-bkr
 mkdir -p $TMP 2>/dev/null
 SYSTEMS=()
 for JOB in $JOBS; do
   echo "Parsing $JOB ..."
   JXML=$TMP/$JOB.xml
-  [ -f $JXML ] || bkr job-results $JOB --prettyxml > $JXML
+  [ -f $JXML ] || bkr job-results J:$JOB --prettyxml > $JXML
   R="'$(xmllint --xpath 'string(//job/recipeSet/recipe/@system)' $JXML)'"
   R+=" '$(xmllint --xpath '//job/whiteboard/text()' $JXML)'"
   R+=" '$(xmllint --xpath 'string(//job/@result)' $JXML)'"
