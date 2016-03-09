@@ -19,7 +19,7 @@ def ca_cert(url)
   end
 end
 
-url = "https://ibm-x3650-03.ovirt.rhts.eng.bos.redhat.com/api"
+puts url = "https://#{ARGV[0]}/api"
 user = "admin@internal"
 password = "ovirt"
 datacenter = "local_datacenter"
