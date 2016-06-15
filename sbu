@@ -8,9 +8,9 @@
 [ -n "${VERBOSE:+y}" ] && set -x
 export LC_ALL=C
 TARGET=${1:-katello}
-DIST=${2:-el6}
-KOJI_TAG=${3:-foreman-nightly-rhel6}
-SCL=${4:-ruby193}
+DIST=${2:-el7}
+KOJI_TAG=${3:-foreman-nightly-rhel7}
+SCL=${4:-tfm}
 SRCDIR=$(rpm --eval '%{_sourcedir}')
 
 echo "sbu $TARGET $DIST $KOJI_TAG $SCL"
@@ -18,13 +18,10 @@ echo "sbu $TARGET $DIST $KOJI_TAG $SCL"
 if [[ "$SCL" == "no" ]]; then
   echo "Building without SCL..."
   EXTRA_DEFINE="__nothing 1"
-  EXTRA_SSH_COMMANDS=""
 else
   echo "Building with SCL '$SCL'..."
   EXTRA_DEFINE="__nothing 1"
   EXTRA_DEFINE="scl $SCL"
-  # yum-builddep does not work with SCL, as a workaround we install ruby193- packages
-  EXTRA_SSH_COMMANDS="yum -y install $SCL-build $SCL-scldevel scl-utils-build $SCL-*"
 fi
 
 SPEC=$(ls *.spec | head -n1)
@@ -105,8 +102,8 @@ else
     # install build essentials
     type -P gcc >/dev/null || yes | yum groupinstall "Development Tools"
 
-    # install SCL on el6
-    $EXTRA_SSH_COMMANDS
+    # install SCLs
+    yum -y install $SCL-build $SCL-scldevel scl-utils-build $SCL-* rh-ruby22-*
 
     # prepare and clean whole rpmbuild dir
     [ -d /usr/src/redhat/RPMS ] && RPMBUILD=/usr/src/redhat

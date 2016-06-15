@@ -7,16 +7,17 @@ MAC2=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
 MAC3=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
 MAC4=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
 MACBMC=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//')
-IP1="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
-IP2="192.168.122.$(($RANDOM % 250 + 1))"
-IP3="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
-IPBMC="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1))"
+IP1="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 2))"
+IP2="192.168.122.$(($RANDOM % 250 + 2))"
+IP3="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 2))"
+IPBMC="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 2))"
 TMP_DATA=$(mktemp /tmp/discover-host-XXXXXXXXXX)
 IP1="192.168.122.37"
 trap "rm -f $TMP_DATA" EXIT
 cat <<EOD > $TMP_DATA
 {
   "facts": {
+    "discovery_version": "3.0.2",
     "interfaces": "fake1,fake2,fake3",
     "macaddress_fake1": "$MAC1",
     "macaddress_fake2": "$MAC2",
