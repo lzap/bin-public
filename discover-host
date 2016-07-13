@@ -45,7 +45,8 @@ cat <<EOD > $TMP_DATA
     "blockdevice.sdb_size": "123456700",
     "xxx-foreman_organization": "TestOrg1",
     "xxx-foreman_location": "Olomouc",
-    "a": "b"
+    "a": "b",
+    "hardwaremodel": "Fake Host FH420"
   }
 }
 EOD
