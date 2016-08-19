@@ -12,7 +12,9 @@ IP2="192.168.122.$(($RANDOM % 250 + 2))"
 IP3="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 2))"
 IPBMC="10.$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 1)).$(($RANDOM % 250 + 2))"
 TMP_DATA=$(mktemp /tmp/discover-host-XXXXXXXXXX)
-IP1="192.168.122.37"
+#IP2="192.168.122.37"
+#MAC2=52:54:00:01:02:03
+DATE=$(date)
 trap "rm -f $TMP_DATA" EXIT
 cat <<EOD > $TMP_DATA
 {
@@ -43,9 +45,8 @@ cat <<EOD > $TMP_DATA
     "memorysize_mb": "900",
     "blockdevice.sda_size": "1234567890",
     "blockdevice.sdb_size": "123456700",
-    "xxx-foreman_organization": "TestOrg1",
-    "xxx-foreman_location": "Olomouc",
-    "a": "b",
+    "Xforeman_organization": "TestOrg1",
+    "Xforeman_location": "Olomouc",
     "hardwaremodel": "Fake Host FH420"
   }
 }

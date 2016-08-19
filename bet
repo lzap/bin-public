@@ -1,0 +1,8 @@
+#/bin/bash
+cleanup() {
+  test -h db/test.sqlite3 && mv -f /tmp/test.sqlite3 db/
+}
+test -f db/test.sqlite3 && mv db/test.sqlite3 /tmp && ln -s /tmp/test.sqlite3 db/test.sqlite3
+trap "cleanup" SIGHUP SIGINT SIGTERM
+FOREMAN_NO_DEPRECATIONS=1 DISABLE_SPRING=true bundle exec rake test $*
+cleanup
