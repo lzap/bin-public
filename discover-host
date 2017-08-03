@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "This script is no longer maintained! Use this one instead"
+echo "https://github.com/theforeman/foreman_discovery/blob/develop/extra/discover-host"
+
 URL=${1:-http://localhost:3000}
 CREDENTIALS=${2:-admin:admin}
 REAL=${3:-dummy}

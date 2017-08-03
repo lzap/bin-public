@@ -2,7 +2,7 @@
 #
 # Send a scratchbuild from current directory.
 #
-# Usage: sbu [katello|fedora|brew|hostname] [dist-tag] [koji-tag]
+# Usage: sbu [mock|katello|fedora|brew|hostname] [dist-tag] [koji-tag]
 #
 
 [ -n "${VERBOSE:+y}" ] && set -x

@@ -21,5 +21,5 @@ HOST=$(eval yad --list --column Hostname --column Whiteboard --column Status --c
 
 if [ ! -z "$HOST" ]; then
   echo "Connecting to $HOST ..."
-  LC_ALL=C ssh -o PasswordAuthentication=no root@$HOST
+  LC_ALL=en_US.utf8 ssh -o PasswordAuthentication=no root@$HOST
 fi
