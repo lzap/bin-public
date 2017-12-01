@@ -1,8 +1,8 @@
 #!/bin/bash
 
 NAME=screencast-$(date +%Y%m%d%H%M)
-FPS=4
-THREADS=3
+FPS=10
+THREADS=7
 
 echo "Click the window to capture and get ready!"
 
@@ -20,8 +20,7 @@ size="${width}x${height}"
 pos="${left},${top}"
 echo "pos=$pos size=$size"
 
-sleep 2
-ffmpeg -y -f alsa -ac 2 -i pulse -f x11grab -r $FPS -s $size -i ${DISPLAY-0:0}+${pos} -acodec pcm_s16le $NAME-temp.wav -an -vcodec libx264 -preset ultrafast -threads 0 $NAME-temp.mp4
+ffmpeg -y -f pulse -ac 2 -i default -f x11grab -r $FPS -s $size -i ${DISPLAY-0:0}+${pos} -acodec pcm_s16le $NAME-temp.wav -an -vcodec libx264 -preset ultrafast -threads 0 $NAME-temp.mp4
 
 echo Merge audio+video and encode to webm for YouTube? && read
 
