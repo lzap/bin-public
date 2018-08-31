@@ -24,4 +24,4 @@ ffmpeg -y -f pulse -ac 2 -i default -f x11grab -r $FPS -s $size -i ${DISPLAY-0:0
 
 echo Merge audio+video and encode to webm for YouTube? && read
 
-ffmpeg -i $NAME-temp.mp4 -i $NAME-temp.wav -acodec libvorbis -ab 128k -ac 2 -vcodec libvpx -qscale 8 -me_method full -mbd rd -flags +gmc+qpel+mv4 -trellis 1 -threads $THREADS $NAME.webm
+ffmpeg -i $NAME-temp.mp4 -i $NAME-temp.wav -acodec libvorbis -ab 128k -ac 2 -vcodec libvpx -threads $THREADS $NAME.webm

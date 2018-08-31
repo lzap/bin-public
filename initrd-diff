@@ -1,0 +1,4 @@
+#!/bin/bash
+diff \
+  <(lsinitrd "$1" | sed 's/^.*x86_64//g' | grep '^/kernel.*xz' | sort) \
+  <(lsinitrd "$2" | sed 's/^.*x86_64//g' | grep '^/kernel.*xz' | sort)
