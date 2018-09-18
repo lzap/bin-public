@@ -2,17 +2,22 @@
 #
 # You need to configure vim to load .git/tags (or install Fugitive.vim).
 #
-LANGS="-sql,-cobol"
+
+EXCLUDE='--exclude=config --exclude=db --exclude=test --exclude=node_modules --exclude=public --exclude=webpack --exclude=script --exclude=app/assets --exclude=jenkins --exclude=vendor --exclude=coverage --exclude=package\*.json'
 
 mkdir .git/tags_lock 2>/dev/null || exit 0
-trap "rmdir .git/tags_lock; rm -f .git/tags.tmp" EXIT
+echo "Started ctags process..."
 
-if [[ -f Rakefile || -f Gemfile ]]; then
-  # ruby-only tags
-  ripper-tags -R --force --tag-relative -f .git/tags.tmp || gem install ripper-tags
-else
-  # general purpose ctags
-  ctags --tag-relative -R -f .git/tags.tmp --exclude=.git "--languages=$LANGS"
-fi
+# universal-ctags - currently the best
+(
+  trap "rmdir .git/tags_lock; rm -f .git/tags.tmp" EXIT ;
+  ctags -R --tag-relative=yes $EXCLUDE -f .git/tags.tmp ;
+  mv .git/tags.tmp .git/tags
+) &
 
-mv .git/tags.tmp .git/tags
+# ripper-tags
+#ripper-tags -R --force --tag-relative $EXCLUDE -f .git/tags.tmp || gem install ripper-tags 
+
+# exuberant ctags
+#ctags --tag-relative -R $EXCLUDE -f .git/tags.tmp
+

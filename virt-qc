@@ -1,10 +1,12 @@
 #!/bin/bash -x
 NAME=$1
-NEWNAME=$NAME-$(date '+%d%m%H%M')
+DATE=$(date '+%d%m%H%M')
+NEWNAME=${2:-$DATE}
+FULLNAME=$NAME-$NEWNAME
 BASEDEV=/dev/vg_virt/$NAME
-NEWDEV=/dev/vg_virt/$NEWNAME
+NEWDEV=/dev/vg_virt/$FULLNAME
 DOMAIN=${DOMAIN:-nat.lan}
 
-sudo lvcreate -L9G -s -n $NEWNAME $BASEDEV
-sudo virt-clone -o $NAME.$DOMAIN -n $NEWNAME -f $NEWDEV --preserve-data
-sudo virsh start $NEWNAME
+sudo lvcreate -L9G -s -n $FULLNAME $BASEDEV
+sudo virt-clone -o $NAME.$DOMAIN -n $FULLNAME -f $NEWDEV --preserve-data
+sudo virsh start $FULLNAME
