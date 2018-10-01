@@ -1,7 +1,6 @@
 #!/bin/bash
 PR=$(echo "$1" | grep -Eo 'pull/.+')
 git checkout develop || git checkout master
-git branch -D review
 git fetch origin $PR/head:review
-git checkout review
+git checkout FETCH_HEAD
 git log -1 --stat
