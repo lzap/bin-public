@@ -1,5 +1,13 @@
 #!/bin/sh
 #
+# Source this file and then call:
+#
+# pacmd_set_output_input $MY_HEADSET_OUTPUT $MY_HEADSET_INPUT 40000 65536 HEADSET
+# pacmd_set_output_input $MY_NORMAL_OUTPUT $MY_HEADSET_INPUT 65536 0 NORMAL
+#
+# to change output between speakers and headset. This is just for inspiration, it
+# will NOT work without changes for your environment. This is my hardware setup:
+#
 # pacmd list-cards | grep name:
 #  name: <alsa_card.usb-C-Media_Electronics_Inc._USB_Audio_Device-00>
 #  name: <alsa_card.pci-0000_0a_00.1>
