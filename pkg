@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [[ $PWD =~ fedpkg ]]; then
+    kswitch -p lzap@FEDORAPROJECT.ORG
+    self=fedpkg
+elif [[ $PWD =~ rhpkg ]]; then
+    kswitch -p lzapleta@REDHAT.COM
+    self=rhpkg-sha512
+else
+    echo Nope.
+    exit 1
+fi
+
+exec $self "$@"

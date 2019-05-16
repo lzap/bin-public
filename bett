@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 cleanup() {
   test -h db/test.sqlite3 && mv -f /tmp/test.sqlite3 db/
 }

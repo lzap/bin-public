@@ -1,2 +1,3 @@
 #!/bin/bash
-cd ~/work/hammer-cli && bundle exec bin/hammer -u admin -p admin -r host create --name fake$(openssl rand -hex 3) --hostgroup centos6 --organization "Red Hat" --location Brno --interface="mac=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//'),primary=true,provision=true"
+HOSTGROUP=${1:-CentOS 7.1}
+cd ~/work/hammer-cli && bundle exec bin/hammer -u admin -p changeme -r host create --name fake$(openssl rand -hex 3) --hostgroup "$HOSTGROUP" --organization "MyOrg" --location "MyLoc" --interface="mac=$(echo -n 52:54:00:; openssl rand -hex 3 | sed 's/\(..\)/\1:/g; s/.$//'),primary=true,provision=true"

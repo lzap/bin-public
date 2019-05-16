@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# pacmd list-cards | grep name:
+#  name: <alsa_card.usb-C-Media_Electronics_Inc._USB_Audio_Device-00>
+#  name: <alsa_card.pci-0000_0a_00.1>
+#  name: <alsa_card.usb-Microsoft_Microsoft___LifeCam_HD-3000-02>
+#  name: <alsa_card.pci-0000_0c_00.3>
+#
+# pacmd list-sinks | grep name:
+#  name: <alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo>
+#  name: <alsa_output.pci-0000_0c_00.3.analog-stereo>
+#
+# pacmd list-sources | grep name:
+#  name: <alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo.monitor>
+#  name: <alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-mono>
+#  name: <alsa_output.pci-0000_0c_00.3.analog-stereo.monitor>
+#  name: <alsa_input.pci-0000_0c_00.3.analog-stereo>
+#
+
+function pacmd_set_output_input {
+  echo "- Pulseaudio script: $5"
+  echo "- Changing default sink to $1"
+  pacmd set-default-sink $1
+  echo "- Changing default source to $2"
+  pacmd set-default-source $2
+  echo "- Setting sink volume of $1 to $3"
+  pacmd set-sink-volume $1 $3
+  echo "- Setting source volume of $2 to $4"
+  pacmd set-source-volume $2 $4
+  pacmd list-sink-inputs | grep index | while read line; do
+    INDEX=$(echo $line | cut -f2 -d' ')
+    echo "- Moving sink input $INDEX to card $1"
+    pacmd move-sink-input $INDEX $1
+    echo "- Setting volume of $INDEX to 100%"
+    pacmd set-sink-input-volume $INDEX 65536
+  done
+  pacmd list-source-outputs | grep index | while read line; do
+    INDEX=$(echo $line | cut -f2 -d' ')
+    # Move not required
+    echo "- Setting volume of $INDEX to 100%"
+    pacmd set-source-output-volume $INDEX 65536
+  done
+  pactl play-sample volume_blip
+}
+
+export MY_NORMAL_ID=pci-0000_0c_00.3
+export MY_HEADSET_ID=usb-C-Media_Electronics_Inc._USB_Audio_Device-00
+export MY_NORMAL_OUTPUT=alsa_output.$MY_NORMAL_ID.analog-stereo
+export MY_NORMAL_INTPUT=alsa_input.$MY_NORMAL_ID.analog-stereo
+export MY_HEADSET_OUTPUT=alsa_output.$MY_HEADSET_ID.analog-stereo
+export MY_HEADSET_INPUT=alsa_input.$MY_HEADSET_ID.analog-mono
+export -f pacmd_set_output_input
