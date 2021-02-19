@@ -18,10 +18,13 @@ echo "$FROM_BRANCH" > .git/xcp-from-branch
 git checkout "$FROM_BRANCH"
 git pull
 echo "Allright, allright, here is the menu:"
-git log --pretty=oneline --abbrev-commit HEAD...HEAD~10
+git log --pretty="format:%h %s" HEAD...HEAD~10
 echo -n "Commits separated by space or enter to give up: "
 read COMMITS
-
+echo "---"
+echo "Thank you for your contribution, commits"
+echo "$COMMITS were cherry-picked into $TO_BRANCH."
+echo "---"
 [[ -n "$COMMITS" ]] && git checkout "$TO_BRANCH" && \
   git cherry-pick -x $COMMITS && \
   echo "Hit ENTER to push, Ctrl-C to interrupt. See ya!" && \
