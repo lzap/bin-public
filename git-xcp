@@ -22,8 +22,7 @@ git log --pretty="format:%h %s" HEAD...HEAD~10
 echo -n "Commits separated by space or enter to give up: "
 read COMMITS
 echo "---"
-echo "Thank you for your contribution, commits"
-echo "$COMMITS were cherry-picked into $TO_BRANCH."
+echo "Thank you for your contribution, commits $COMMITS were cherry-picked into the `$TO_BRANCH` branch."
 echo "---"
 [[ -n "$COMMITS" ]] && git checkout "$TO_BRANCH" && \
   git cherry-pick -x $COMMITS && \
