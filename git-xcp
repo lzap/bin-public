@@ -1,0 +1,28 @@
+#!/bin/bash
+[[ -d .git ]] || (echo "Not a git repo, fool!" && exit 1)
+TO_BRANCH=$(cat .git/xcp-to-branch 2>/dev/null)
+FROM_BRANCH=$(cat .git/xcp-from-branch 2>/dev/null)
+set -e
+echo "Looks like you want to cherry-pick, huh?!"
+git stash &>/dev/null && trap "git stash pop &>/dev/null" EXIT
+
+read -e -i "$TO_BRANCH" -p "Branch you want to pick INTO: " TO_BRANCH
+[[ -z "$TO_BRANCH" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
+echo "$TO_BRANCH" > .git/xcp-to-branch
+git checkout "$TO_BRANCH"
+git pull
+
+read -e -i "$FROM_BRANCH" -p "Branch you want to pick FROM: " FROM_BRANCH
+[[ -z "$FROM_BRANCH" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
+echo "$FROM_BRANCH" > .git/xcp-from-branch
+git checkout "$FROM_BRANCH"
+git pull
+echo "Allright, allright, here is the menu:"
+git log --pretty=oneline --abbrev-commit HEAD...HEAD~10
+echo -n "Commits separated by space or enter to give up: "
+read COMMITS
+
+[[ -n "$COMMITS" ]] && git checkout "$TO_BRANCH" && \
+  git cherry-pick -x $COMMITS && \
+  echo "Hit ENTER to push, Ctrl-C to interrupt. See ya!" && \
+  read && git push

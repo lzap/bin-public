@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# Example:
+#
+#   virt-new centos-7.6 test_el7
+#
+IMGNAME=$1
+NAME=$2
+SIZE=${3:-6G}
+DOMAIN=${4:-nat.lan}
+VMNAME=$NAME.$DOMAIN
+DATE=$(date '+%d%m%H%M%S')
+LVNAME=$NAME-$DATE
+DEVICE=/dev/vg_virt/$LVNAME
+
+sudo lvcreate -L$SIZE -n $LVNAME vg_virt
+
+sudo virt-builder $IMGNAME --output /dev/vg_virt/$LVNAME \
+  --root-password password:redhat \
+  --hostname $VMNAME \
+  --ssh-inject root:file:/home/lzap/.ssh/id_rsa.pub
+
+sudo virt-install --import --name $VMNAME --vcpus 2 \
+  --ram 9000 --disk path=/dev/vg_virt/$LVNAME,format=raw \
+  --os-variant rhel7.5 -w network=default \
+  --graphics spice,listen=0.0.0.0 --noautoconsole \
+  --serial tcp,host=:4556,mode=bind,protocol=telnet
+
+telnet localhost 4556

@@ -1,0 +1,3 @@
+#!/bin/sh
+source /home/lzap/bin/public/padevices
+pacmd_set_output_input $MY_MONITOR_OUTPUT $MY_HEADSET_INPUT 20000 0 MONITOR

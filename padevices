@@ -51,10 +51,13 @@ function pacmd_set_output_input {
   pactl play-sample volume_blip
 }
 
-export MY_NORMAL_ID=pci-0000_0c_00.3
-export MY_HEADSET_ID=usb-C-Media_Electronics_Inc._USB_Audio_Device-00
+#export MY_NORMAL_ID=pci-0000_0c_00.3
+export MY_NORMAL_ID=pci-0000_0e_00.3
+#export MY_HEADSET_ID=usb-C-Media_Electronics_Inc._USB_Audio_Device-00
+export MY_HEADSET_ID=usb-Kingston_HyperX_Virtual_Surround_Sound_00000000-00
 export MY_NORMAL_OUTPUT=alsa_output.$MY_NORMAL_ID.analog-stereo
 export MY_NORMAL_INTPUT=alsa_input.$MY_NORMAL_ID.analog-stereo
+export MY_MONITOR_OUTPUT=alsa_output.pci-0000_0a_00.1.hdmi-stereo-extra2
 export MY_HEADSET_OUTPUT=alsa_output.$MY_HEADSET_ID.analog-stereo
-export MY_HEADSET_INPUT=alsa_input.$MY_HEADSET_ID.analog-mono
+export MY_HEADSET_INPUT=alsa_input.$MY_HEADSET_ID.analog-stereo
 export -f pacmd_set_output_input

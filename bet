@@ -1,4 +1,6 @@
 #/bin/bash
+export RUBYOPT="-W0"
+export TESTDRIVER_PATH=/usr/bin/chromedriver
 cleanup() {
   test -h db/test.sqlite3 && mv -f /tmp/test.sqlite3 db/
 }

@@ -3,9 +3,11 @@
 if [[ $PWD =~ fedpkg ]]; then
     kswitch -p lzap@FEDORAPROJECT.ORG
     self=fedpkg
+    export KRB5_CONFIG=/etc/krb5-fedora.conf
 elif [[ $PWD =~ rhpkg ]]; then
     kswitch -p lzapleta@REDHAT.COM
     self=rhpkg-sha512
+    export KRB5_CONFIG=/etc/krb5.conf
 else
     echo Nope.
     exit 1

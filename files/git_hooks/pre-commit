@@ -1,0 +1,2 @@
+#!/bin/sh
+test -x .git/hooks/prevent-master && .git/hooks/prevent-master

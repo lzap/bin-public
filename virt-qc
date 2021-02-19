@@ -7,6 +7,10 @@ BASEDEV=/dev/vg_virt/$NAME
 NEWDEV=/dev/vg_virt/$FULLNAME
 DOMAIN=${DOMAIN:-nat.lan}
 
+echo *** WARNING ***
+echo This WILL slow down LVM initialization during boot, delete the snapshot ASAP!
+echo *** WARNING ***
+
 sudo lvcreate -L9G -s -n $FULLNAME $BASEDEV
 sudo virt-clone -o $NAME.$DOMAIN -n $FULLNAME -f $NEWDEV --preserve-data
 sudo virsh start $FULLNAME

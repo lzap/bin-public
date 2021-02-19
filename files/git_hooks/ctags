@@ -3,7 +3,7 @@
 # You need to configure vim to load .git/tags (or install Fugitive.vim).
 #
 
-EXCLUDE='--exclude=config --exclude=db --exclude=test --exclude=node_modules --exclude=public --exclude=webpack --exclude=script --exclude=app/assets --exclude=jenkins --exclude=vendor --exclude=coverage --exclude=package\*.json'
+EXCLUDE='--exclude=config --exclude=db --exclude=test --exclude=node_modules --exclude=public --exclude=webpack --exclude=script --exclude=app/assets --exclude=jenkins --exclude=vendor --exclude=coverage --exclude=package\*.json --exclude=tmp --exclude=logs'
 
 mkdir .git/tags_lock 2>/dev/null || exit 0
 echo "Started ctags process..."
