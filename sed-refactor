@@ -1,3 +1,0 @@
-#!/bin/bash
-[[ "$1" == "" || "$2" == "" ]] && echo Usage: $0 *.cxx 's/CONSTANT_X/CONSTANT_Y/g' && exit 1
-find . -name "$1" -exec sed -i "$2" {} \; -print

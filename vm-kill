@@ -1,6 +1,0 @@
-#!/bin/sh
-#
-# To get completion working source ~/bin/public/files/completion.d/*
-#
-sudo virsh destroy $1 && \
-sudo virsh undefine $1

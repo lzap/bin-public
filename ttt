@@ -1,9 +1,0 @@
-#!/bin/bash
-
-DIR=$HOME/.tt
-
-if [ "$#" -eq 0 ]; then
-  tail $(ls $DIR/$(date '+%Y')* | tail -n3)
-else
-  echo "$(date '+%H:%M') $*" >> $DIR/$(date '+%Y-%m-%d')
-fi

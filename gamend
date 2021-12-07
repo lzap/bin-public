@@ -1,4 +1,0 @@
-#!/bin/sh
-B=$(git rev-parse --abbrev-ref HEAD)
-git diff > /tmp/$B.diff && gist /tmp/$B.diff
-git commit -a --amend

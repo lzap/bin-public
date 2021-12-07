@@ -1,6 +1,0 @@
-#!/bin/bash
-
-MASTER=alsa_output.pci-0000_00_1b.0.analog-stereo
-
-pacmd load-module module-ladspa-sink sink_name=ladspa_output.amp master=$MASTER plugin=amp label=amp_stereo control=200
-pacmd load-module module-ladspa-sink sink_name=ladspa_output.limiter master=ladspa_output.amp plugin=hard_limiter_1413 label=hardLimiter control=-10,1,0

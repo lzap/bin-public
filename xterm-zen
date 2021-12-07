@@ -1,2 +1,0 @@
-#!/bin/sh
-xterm -cm -fa Terminus -fs 20 -bg white -fg black -cr red -bc -bcf 200 -bcn 200 -xrm "allowColorOps false" -fullscreen -e "PS1='$ ' LC_ALL=C /bin/bash --norc --noprofile" &

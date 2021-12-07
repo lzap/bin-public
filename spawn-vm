@@ -1,0 +1,29 @@
+#!/bin/bash
+NAME=$1
+DISTRO=${2:-rhel-8.4}
+PURPOSE=${3:-$NAME on $DISTRO from $DATE}
+FIRMWARE=${4:-bios}
+NO=$(echo $NAME | grep -Eo '[[:digit:]]+')
+
+if [[ ! -f /dev/vg_virt/$NAME ]]; then
+  echo "Unknown volume: $NAME"
+  exit 1
+fi
+
+if [[ "$FIRMWARE" == "bios" ]]; then
+  BOOT="--boot bootmenu.enable=on,bios.useserial=on"
+else
+  BOOT="--boot uefi"
+fi
+
+if [[ $NAME == b* ]]; then
+  MEMORY="--memory 15500"
+else
+  MEMORY="--memory 6600"
+fi
+
+sudo virsh destroy $NAME.nuc 2>/dev/null
+sudo virsh undefine $NAME.nuc 2>/dev/null
+set -x
+sudo virt-builder "$DISTRO" --output /dev/vg_virt/$NAME.nuc --root-password password:redhat --hostname $NAME.nuc.local --ssh-inject root:file:/home/lzap/.ssh/id_ed25519.pub --update --selinux-relabel --timezone Europe/Prague --run-command "echo '$PURPOSE' > /etc/motd"
+sudo virt-install -n $NAME.nuc $MEMORY --vcpus 2 --os-variant rhel8-unknown --graphics none --noautoconsole $BOOT --serial pty --disk vol=vg_virt/$NAME.nuc --network network=provision,mac=52:54:00:c8:00:$NO --metadata "title=$PURPOSE"

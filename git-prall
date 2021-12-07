@@ -1,6 +1,0 @@
-#!/bin/bash
-git remote prune $USER --dry-run
-echo "Prune *all* remotes now? [ENTER]"
-read
-for R in $(git remote); do echo Pruning $R; git remote prune $R; done
-git gc --agressive

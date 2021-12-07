@@ -1,2 +1,0 @@
-#!/bin/sh
-lynx -dump "$1" | awk '/http/{print $2'}

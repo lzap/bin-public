@@ -1,4 +1,0 @@
-#!/bin/bash
-mkdir /tmp/firefox
-firefox --profile /tmp/firefox
-rm -rf /tmp/firefox

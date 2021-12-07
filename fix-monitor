@@ -1,4 +1,0 @@
-#!/bin/bash
-xrandr --output DP-1 --off --output HDMI-1 --off --output DVI-D-1 --off
-sleep 5
-xrandr --output DP-1 --auto --output HDMI-1 --off --output DVI-D-1 --off
