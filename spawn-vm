@@ -1,11 +1,41 @@
 #!/bin/bash
 NAME=$1
-DISTRO=${2:-rhel-8.4}
-PURPOSE=${3:-$NAME on $DISTRO from $DATE}
+PURPOSE=${2:-$NAME from $ISOFILE on $DATE}
+DISTRO=${3:-rhel-8.5}
+ISOFILE=${3:-rhel-8.5-x86_64-dvd.iso}
 FIRMWARE=${4:-bios}
 NO=$(echo $NAME | grep -Eo '[[:digit:]]+')
+IMGPATH=/var/lib/libvirt/images
+KSFILE=$IMGPATH/kickstart-$NAME.iso
+VG=vg_virt
+MAC=52:54:00:c8:00
+DOMAIN=local
+TIMEZONE=Europe/Prague
+ROOTPW=redhat
+SELINUX=enforcing
+FIREWALL=enable
+RH_USER=redhat.com-username
+RH_PASS=redhat.com-password
+SSH_KEY=$HOME/.ssh/id_ed25519.pub
+SSH_KEYSTRING=$(cat "$SSH_KEY" | cut -d" " -f2)
+BASEDIR=$(dirname $0)
+ME=$(basename $0)
+[[ -f "$0.conf" ]] && source "$0.conf"
+TMP=$(mktemp -d /tmp/$ME-XXXXXXX)
+trap "rm -rf $TMP" EXIT
 
-if [[ ! -f /dev/vg_virt/$NAME ]]; then
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+if [[ ! -e $IMGPATH/$ISOFILE ]]; then
+  echo "Unknown ISO: $ISOFILE"
+  ls -1 $IMGPATH
+  exit 1
+fi
+
+if [[ ! -e /dev/$VG/$NAME ]]; then
   echo "Unknown volume: $NAME"
   exit 1
 fi
@@ -14,16 +44,78 @@ if [[ "$FIRMWARE" == "bios" ]]; then
   BOOT="--boot bootmenu.enable=on,bios.useserial=on"
 else
   BOOT="--boot uefi"
+  # TODO ESP paritition
 fi
 
 if [[ $NAME == b* ]]; then
-  MEMORY="--memory 15500"
+  MEMORY="--memory 20000"
 else
-  MEMORY="--memory 6600"
+  MEMORY="--memory 6000"
 fi
 
-sudo virsh destroy $NAME.nuc 2>/dev/null
-sudo virsh undefine $NAME.nuc 2>/dev/null
+mkdir $TMP/iso
+cat >$TMP/iso/ks.cfg <<EOF
+cdrom
+text
+skipx
+lang en_US
+keyboard us
+timezone $TIMEZONE --isUtc
+#authselect --useshadow --passalgo=sha512 --kickstart
+#auth --passalgo=sha512 --useshadow
+sshkey --username=root "$SSH_KEYSTRING"
+network --bootproto dhcp --hostname $NAME.$DOMAIN
+rootpw $ROOTPW --plaintext
+selinux --$SELINUX
+firewall --$FIREWALL
+firstboot --disable
+services --disabled=kdump
+reboot --eject
+bootloader --location=mbr --append="console=ttyS0"
+zerombr
+clearpart --all --initlabel
+part / --fstype=xfs --size=1 --grow --asprimary
+part swap --recommended
+%packages
+@core
+vim-enhanced
+tmux
+git
+%end
+%post --log=/root/post.ks.log
+cat >/etc/motd <<EOMOTD
+
+A VM created by $ME on $(date), purpose:
+$PURPOSE
+
+EOMOTD
+%end
+%post --log=/root/rhsm.ks.log
+subscription-manager register --auto-attach --username=$RH_USER --password=$RH_PASS
+subscription-manager list --available
+%end
+EOF
+
+mkisofs -V OEMDRV -o $KSFILE $TMP/iso
+
+virsh destroy $NAME.$DOMAIN 2>/dev/null
+virsh undefine $NAME.$DOMAIN 2>/dev/null
 set -x
-sudo virt-builder "$DISTRO" --output /dev/vg_virt/$NAME.nuc --root-password password:redhat --hostname $NAME.nuc.local --ssh-inject root:file:/home/lzap/.ssh/id_ed25519.pub --update --selinux-relabel --timezone Europe/Prague --run-command "echo '$PURPOSE' > /etc/motd"
-sudo virt-install -n $NAME.nuc $MEMORY --vcpus 2 --os-variant rhel8-unknown --graphics none --noautoconsole $BOOT --serial pty --disk vol=vg_virt/$NAME.nuc --network network=provision,mac=52:54:00:c8:00:$NO --metadata "title=$PURPOSE"
+#virt-builder "$DISTRO" --output /dev/$VG/$NAME --root-password password:redhat --hostname $NAME.$DOMAIN --ssh-inject root:file:/home/lzap/.ssh/id_ed25519.pub --update --selinux-relabel --timezone Europe/Prague --run-command "echo '$PURPOSE' > /etc/motd"
+#virt-install -n $NAME.$DOMAIN $MEMORY --vcpus 2 --os-variant rhel8-unknown --graphics none --noautoconsole $BOOT --serial pty --disk vol=$VG/$NAME --network network=provision,mac=52:54:00:c8:00:$NO --metadata "title=$PURPOSE"
+
+# When debugging installer errors, connect to the console via Cockpit or "virsh
+# console" and hit TAB key to modify boot options and enter "console=ttyS0" to
+# actually see what is going on. Otherwise installation will be performed
+# silently without any output.
+
+virt-install -n $NAME.$DOMAIN $MEMORY --vcpus 2 \
+	--os-variant rhel8-unknown --cdrom "$IMGPATH/$ISOFILE" \
+	--graphics none --noautoconsole \
+	$BOOT --serial pty \
+	--disk vol=$VG/$NAME \
+	--disk device=cdrom,path=$KSFILE,source.startupPolicy=optional \
+	--network network=provision,mac=$MAC:$NO \
+	--metadata "title=$PURPOSE"
+
+

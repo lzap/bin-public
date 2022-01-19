@@ -1,30 +1,42 @@
 #!/bin/bash
 [[ -d .git ]] || (echo "Not a git repo, fool!" && exit 1)
-TO_BRANCH=$(cat .git/xcp-to-branch 2>/dev/null)
+TO_BRANCHES=$(cat .git/xcp-to-branch 2>/dev/null)
 FROM_BRANCH=$(cat .git/xcp-from-branch 2>/dev/null)
 set -e
 echo "Looks like you want to cherry-pick, huh?!"
-git stash &>/dev/null && trap "git stash pop &>/dev/null" EXIT
+function report() {
+	echo "If you want to drop a github comment:"
+	echo "---"
+	echo "Commit(s) $COMMITS were cherry-picked into: $TO_BRANCHES"
+	for TO_BRANCH in $TO_BRANCHES; do
+		git log --pretty="format:* %h %s" $TO_BRANCH...$TO_BRANCH~1
+	done
+	echo "---"
+	git stash pop &>/dev/null || true
+}
+git stash &>/dev/null || true
+trap report EXIT SIGTERM SIGINT
 
-read -e -i "$TO_BRANCH" -p "Branch you want to pick INTO: " TO_BRANCH
-[[ -z "$TO_BRANCH" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
-echo "$TO_BRANCH" > .git/xcp-to-branch
-git checkout "$TO_BRANCH"
-git pull
+read -e -i "$TO_BRANCHES" -p "Space-separated branches you want to pick INTO: " TO_BRANCHES
+[[ -z "$TO_BRANCHES" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
+echo "$TO_BRANCHES" > .git/xcp-to-branch
 
 read -e -i "$FROM_BRANCH" -p "Branch you want to pick FROM: " FROM_BRANCH
 [[ -z "$FROM_BRANCH" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
 echo "$FROM_BRANCH" > .git/xcp-from-branch
+
 git checkout "$FROM_BRANCH"
 git pull
+
 echo "Allright, allright, here is the menu:"
 git log --pretty="format:%h %s" HEAD...HEAD~10
 echo -n "Commits separated by space or enter to give up: "
 read COMMITS
-echo "---"
-echo "Thank you for your contribution, commits $COMMITS were cherry-picked into the '$TO_BRANCH' branch."
-echo "---"
-[[ -n "$COMMITS" ]] && git checkout "$TO_BRANCH" && \
-  git cherry-pick -x $COMMITS && \
-  echo "Hit ENTER to *PUSH*, Ctrl-C to interrupt. See ya!" && \
-  read && git push
+[[ -z "$COMMITS" ]] && exit 1
+
+for TO_BRANCH in $TO_BRANCHES; do
+	git checkout "$TO_BRANCH"
+	git pull
+  	git cherry-pick -x $COMMITS && echo "Hit ENTER to *PUSH* into $TO_BRANCH, Ctrl-C to interrupt." && read && git push
+done
+
