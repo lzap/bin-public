@@ -4,18 +4,27 @@ TO_BRANCHES=$(cat .git/xcp-to-branch 2>/dev/null)
 FROM_BRANCH=$(cat .git/xcp-from-branch 2>/dev/null)
 set -e
 echo "Looks like you want to cherry-pick, huh?!"
-function report() {
-	echo "If you want to drop a github comment:"
-	echo "---"
-	echo "Commit(s) $COMMITS were cherry-picked into: $TO_BRANCHES"
-	for TO_BRANCH in $TO_BRANCHES; do
-		git log --pretty="format:* %h %s" $TO_BRANCH...$TO_BRANCH~1
-	done
-	echo "---"
+function cleanup() {
+	if [ -n "$1" ]; then
+		echo "ABORTED by $1"
+	elif [ $status -ne 0 ]; then
+		echo "FAILURE (status $status)"
+	else
+		echo "SUCCESS, to drop a github comment:"
+		echo "---"
+		echo "Commit(s) $COMMITS were cherry-picked into: $TO_BRANCHES"
+		for TO_BRANCH in $TO_BRANCHES; do
+			git log --pretty="format:* %h %s" $TO_BRANCH...$TO_BRANCH~1
+		done
+		echo "---"
+	fi
 	git stash pop &>/dev/null || true
 }
 git stash &>/dev/null || true
-trap report EXIT SIGTERM SIGINT
+trap 'status=$?; cleanup; exit $status' EXIT
+trap 'trap - HUP; cleanup SIGHUP; kill -HUP $$' HUP
+trap 'trap - INT; cleanup SIGINT; kill -INT $$' INT
+trap 'trap - TERM; cleanup SIGTERM; kill -TERM $$' TERM
 
 read -e -i "$TO_BRANCHES" -p "Space-separated branches you want to pick INTO: " TO_BRANCHES
 [[ -z "$TO_BRANCHES" ]] && (echo "You gotta be kidding me, we're done." && exit 1)
